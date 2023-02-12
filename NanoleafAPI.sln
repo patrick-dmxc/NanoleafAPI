@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33110.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NanoleafAPI", "NanoleafAPI\NanoleafAPI.csproj", "{D7B25F89-1C89-4C4B-9123-E9986164EDB1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NanoleafAPI_Tests", "NanoleafAPI_Tests\NanoleafAPI_Tests.csproj", "{0B146FEE-1D46-4E95-A3DF-048C43E6FE31}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NanoleafAPI_Test", "NanoleafAPI_Test\NanoleafAPI_Test.csproj", "{40092127-2709-48BA-BD86-DCDCA3AA2224}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D7B25F89-1C89-4C4B-9123-E9986164EDB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7B25F89-1C89-4C4B-9123-E9986164EDB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7B25F89-1C89-4C4B-9123-E9986164EDB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7B25F89-1C89-4C4B-9123-E9986164EDB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B146FEE-1D46-4E95-A3DF-048C43E6FE31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B146FEE-1D46-4E95-A3DF-048C43E6FE31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B146FEE-1D46-4E95-A3DF-048C43E6FE31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B146FEE-1D46-4E95-A3DF-048C43E6FE31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40092127-2709-48BA-BD86-DCDCA3AA2224}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40092127-2709-48BA-BD86-DCDCA3AA2224}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40092127-2709-48BA-BD86-DCDCA3AA2224}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40092127-2709-48BA-BD86-DCDCA3AA2224}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4A87FE41-4982-4390-B086-3D6255131184}
+	EndGlobalSection
+EndGlobal

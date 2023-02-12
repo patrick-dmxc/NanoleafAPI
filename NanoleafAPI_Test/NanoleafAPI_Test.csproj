@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System.IO.Compression" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.ComponentModel.Composition" Version="7.0.0" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NanoleafAPI\NanoleafAPI.csproj" />
+  </ItemGroup>
+</Project>
