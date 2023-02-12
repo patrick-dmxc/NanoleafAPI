@@ -267,7 +267,7 @@ namespace NanoleafAPI
             threadStream.Start();
         }
 
-        internal void RequestToken(int tryes=20)
+        public void RequestToken(int tryes=20)
         {
             int count = 0;
             Task.Run(async () =>
