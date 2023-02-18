@@ -1,7 +1,10 @@
-﻿namespace NanoleafAPI
+﻿using Microsoft.Extensions.Logging;
+
+namespace NanoleafAPI
 {
     public static class Tools
     {
+        public static ILoggerFactory LoggerFactory = new LoggerFactory();
         public static EDeviceType ModelStringToEnum(string val)
         {
             EDeviceType type = EDeviceType.UNKNOWN;

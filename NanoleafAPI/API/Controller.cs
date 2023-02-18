@@ -181,7 +181,7 @@ namespace NanoleafAPI
 
         public Controller(JToken json)
         {
-            _logger = new LoggerFactory().CreateLogger<Controller>();
+            _logger = Tools.LoggerFactory.CreateLogger<Controller>();
             IP = (string)json[nameof(IP)];
             Port = (string)json[nameof(Port)];
             Auth_token = (string)json[nameof(Auth_token)];

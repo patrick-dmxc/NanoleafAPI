@@ -18,14 +18,13 @@ namespace NanoleafAPI
 {
     public class Communication
     {
-        private static ILoggerFactory loggerFactory = new LoggerFactory();
         private static ILogger __logger;
         private static  ILogger _logger
         {
             get
             {
                 if (__logger == null)
-                    __logger = loggerFactory.CreateLogger(nameof(Communication));
+                    __logger = Tools.LoggerFactory.CreateLogger(nameof(Communication));
                 return __logger;
             }
         }
@@ -865,6 +864,7 @@ namespace NanoleafAPI
 
         public static void StartEventListener()
         {
+            _logger.LogDebug("Start Event listener");
             if (eventCleanLoop == null)
             {
                 eventCleanLoop = new Thread(() =>
