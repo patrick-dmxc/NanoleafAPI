@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Net.NetworkInformation;
+using System.Reactive.Concurrency;
 using static NanoleafAPI.Panel;
 
 namespace NanoleafAPI
@@ -165,7 +167,7 @@ namespace NanoleafAPI
         public string ColorMode { get; private set; }
         public string ColorModeStored { get; private set; }
         private List<Panel> panels = new List<Panel>();
-        private List<Panel> changedPanels = new List<Panel>();
+        private ConcurrentDictionary<int, Panel> changedPanels = new ConcurrentDictionary<int, Panel>();
         public ReadOnlyCollection<Panel> Panels
         {
             get { return panels.AsReadOnly(); }
@@ -178,10 +180,21 @@ namespace NanoleafAPI
         public event EventHandler UpdatedInfos;
 
         private ExternalControlConnectionInfo externalControlInfo;
+        private Thread streamThread;
+
+        private double refreshRate = 44;
+        public double RefreshRate
+        {
+            get => refreshRate;
+            set
+            {
+                refreshRate = Math.Min(60, Math.Max(10, value));
+            }
+        }
 
         public Controller(JToken json)
         {
-            _logger = Tools.LoggerFactory.CreateLogger<Controller>();
+            _logger = Tools.LoggerFactory?.CreateLogger<Controller>();
             IP = (string)json[nameof(IP)];
             Port = (string)json[nameof(Port)];
             Auth_token = (string)json[nameof(Auth_token)];
@@ -235,15 +248,11 @@ namespace NanoleafAPI
         }
         public Controller(string ip, string port, string auth_token = null)
         {
-            _logger = Tools.LoggerFactory.CreateLogger<Controller>();
+            _logger = Tools.LoggerFactory?.CreateLogger<Controller>();
             IP = ip;
             Port = port;
             Auth_token = auth_token;
-            if (Auth_token == null /*&& NanoleafPlugin.AutoRequestToken*/)
-            {
-                RequestToken();
-            }
-            startServices();
+            _ =startServices();
         }
 
         ~Controller()
@@ -251,55 +260,51 @@ namespace NanoleafAPI
             Dispose();
         }
 
-        private void startServices()
+        private async Task startServices()
         {
-            Task taskRun = new Task(() =>
+            if (Auth_token == null)
             {
-                runController();
-            });
-            taskRun.Start();
-            Thread threadStream = new Thread(() =>
-            {
-                streamController();
-            });
-            threadStream.IsBackground = true;
-            threadStream.Priority = ThreadPriority.AboveNormal;
-            threadStream.SetApartmentState(ApartmentState.MTA);
-            threadStream.Start();
+                await RequestToken();
+            }
+            _ = this.runController();
+            _ = this.streamController();
         }
 
-        public void RequestToken(int tryes=20)
+        public async Task<string> RequestToken(int tryes = 20)
         {
+            _logger?.LogInformation($"Request AuthToken for Device({IP})");
             int count = 0;
-            Task.Run(async () =>
-            {
-                while (Auth_token == null && !this.isDisposed)
-                    try
-                    {
-                        Auth_token = await Communication.AddUser(IP, Port);
-                    }
-                    catch (Exception)
-                    {
-                        _logger?.LogInformation($"Device({IP}) is maybe not in Pairing-Mode. Please hold the Powerbutton until you see a Visual Feedback on the Controller (5-7)s");
-                        await Task.Delay(8000);// If the device is not in Pairing-Mode it takes 5-7s to enable the pairing mode by hand. We try it again after 8s.
-                        count++;
-                        if (count >= tryes && Auth_token == null)
-                        {
-                            _logger?.LogInformation($"Device({IP}) not Response after {count} retries");
-                            return;
-                        }
-                    }
-
-                if (Auth_token != null)
+            while (Auth_token == null && !this.isDisposed)
+                try
                 {
-                    _logger?.LogInformation($"Received AuthToken ({Auth_token}) from Device({IP}) after {count} retries");
-                    AuthTokenReceived?.Invoke(this, EventArgs.Empty);
+                    Auth_token = await Communication.AddUser(IP, Port);
                 }
-            });
+                catch (Exception)
+                {
+                    _logger?.LogInformation($"Device({IP}) is maybe not in Pairing-Mode. Please hold the Powerbutton until you see a Visual Feedback on the Controller (5-7)s");
+                    await Task.Delay(8000);// If the device is not in Pairing-Mode it takes 5-7s to enable the pairing mode by hand. We try it again after 8s.
+                    count++;
+                    if (count >= tryes && Auth_token == null)
+                    {
+                        _logger?.LogInformation($"Device({IP}) not Response after {count} retries");
+                        return null;
+                    }
+                }
+
+            if (Auth_token != null)
+            {
+                _logger?.LogInformation($"Received AuthToken ({Auth_token}) from Device({IP}) after {count} retries");
+                AuthTokenReceived?.InvokeFailSafe(this, EventArgs.Empty);
+            }
+            else
+                _logger?.LogInformation($"Didn't received AuthToken ({Auth_token}) from Device({IP}) after {count} retries");
+
+            return Auth_token;
         }
 
-        private async void runController()
+        private async Task runController()
         {
+            _logger?.LogDebug("Run Controller");
             while (!isDisposed && Auth_token == null)
                 await Task.Delay(1000);
 
@@ -319,14 +324,14 @@ namespace NanoleafAPI
                     await Task.Delay(5000);
 
                     if (this.Reachable && !isDisposed)
-                        UpdateInfos(await Communication.GetAllPanelInfo(IP, Port, Auth_token));
+                        await UpdateInfos(await Communication.GetAllPanelInfo(IP, Port, Auth_token));
                 }
                 catch (Exception e)
                 {
                 }
             } while (!isDisposed);
         }
-        private async void establishConnection()
+        private async Task establishConnection()
         {
             try
             {
@@ -334,17 +339,21 @@ namespace NanoleafAPI
                 Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
 
                 var infos = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
-                BackupSettings(infos);
-                UpdateInfos(infos);
+                if (infos == null)
+                    return;
+
+                await BackupSettings(infos);
+                await UpdateInfos(infos);
                 await Communication.StartEventListener(IP, Port, Auth_token);
                 externalControlInfo = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
             }
             catch (Exception e)
             {
+                _logger?.LogError(e, string.Empty);
             }
         }
 
-        private void UpdateInfos(AllPanelInfo allPanelInfo)
+        private async Task UpdateInfos(AllPanelInfo allPanelInfo)
         {
             if (allPanelInfo == null)
             {
@@ -360,27 +369,7 @@ namespace NanoleafAPI
             HardwareVersion = allPanelInfo.HardwareVersion;
             FirmwareVersion = allPanelInfo.FirmwareVersion;
 
-            switch (Model)
-            {
-                case "NL22":
-                    DeviceType = EDeviceType.LightPanles;
-                    break;
-                case "NL29":
-                    DeviceType = EDeviceType.Canvas;
-                    break;
-                case "NL42":
-                    DeviceType = EDeviceType.Shapes;
-                    break;
-                case "NL45":
-                    DeviceType = EDeviceType.Essentials;
-                    break;
-                case "NL52":
-                    DeviceType = EDeviceType.Elements;
-                    break;
-                case "NL59":
-                    DeviceType = EDeviceType.Lines;
-                    break;
-            }
+            DeviceType = Tools.ModelStringToEnum(Model);
 
             NumberOfPanels = allPanelInfo.PanelLayout.Layout.NumberOfPanels;
             globalOrientation = allPanelInfo.PanelLayout.GlobalOrientation.Value;
@@ -406,12 +395,12 @@ namespace NanoleafAPI
             ColorTempratureMax = (ushort)allPanelInfo.State.ColorTemprature.Max;
             ColorMode = allPanelInfo.State.ColorMode;
 
-            UpdatedInfos?.Invoke(this, EventArgs.Empty);
+            UpdatedInfos?.InvokeFailSafe(this, EventArgs.Empty);
 
-            UpdatePanelLayout(allPanelInfo.PanelLayout.Layout);
+            _ = UpdatePanelLayout(allPanelInfo.PanelLayout.Layout);
         }
 
-        private void BackupSettings(AllPanelInfo allPanelInfo)
+        private async Task BackupSettings(AllPanelInfo allPanelInfo)
         {
             //Backup current state to restore it on shutdown
             GlobalOrientationStored = allPanelInfo.PanelLayout.GlobalOrientation.Value;
@@ -430,9 +419,9 @@ namespace NanoleafAPI
                 return;
 
             if (!isDisposed)
-                UpdatePanelLayout(e.LayoutEvent.Layout);
+                _ = UpdatePanelLayout(e.LayoutEvent.Layout);
         }
-        private void UpdatePanelLayout(Layout layout)
+        private async Task UpdatePanelLayout(Layout layout)
         {
             var ids = layout.PanelPositions.Select(p => p.PanelId);
             foreach (int id in ids)
@@ -441,7 +430,7 @@ namespace NanoleafAPI
                 {
                     var pp = layout.PanelPositions.Single(p => p.PanelId.Equals(id));
                     panels.Add(new Panel(IP, pp));
-                    PanelAdded?.Invoke(null, EventArgs.Empty);
+                    PanelAdded?.InvokeFailSafe(null, EventArgs.Empty);
                 }
             }
             bool panelRemoved = false;
@@ -453,76 +442,94 @@ namespace NanoleafAPI
                 return remove;
             });
             if(panelRemoved)
-                PanelRemoved?.Invoke(null, EventArgs.Empty);
+                PanelRemoved?.InvokeFailSafe(null, EventArgs.Empty);
 
-            PanelLayoutChanged?.Invoke(null, EventArgs.Empty);
+            PanelLayoutChanged?.InvokeFailSafe(null, EventArgs.Empty);
         }
 
-        private void streamController()
+        private async Task streamController()
         {
-            while (!isDisposed && Auth_token == null)
-                Thread.Sleep(1000);
-
-            long lastTimestamp = 0;
-            long nowTimestamp = 0;
-            int frameCounter = 0;
-            while (!isDisposed)
+            streamThread = new Thread(async () =>
             {
-                nowTimestamp = DateTime.Now.Ticks;
-                int refreshRate = 60;// NanoleafPlugin.RefreshRate.Limit(10, 60);
-                double milliSinceLast = ((double)(nowTimestamp - lastTimestamp)) / TimeSpan.TicksPerMillisecond;
-                double frameDuration = (1000 / refreshRate);
-                if (milliSinceLast < frameDuration)
+                _logger?.LogDebug("Start Stream");
+                while (!isDisposed && Auth_token == null)
+                    Thread.Sleep(1000);
+
+                DateTime lastTimestamp = default;
+                DateTime nowTimestamp = default;
+                int frameCounter = 0;
+                while (!isDisposed)
                 {
-                    if (milliSinceLast > frameDuration*2)
-                        _logger?.LogWarning($"Streaming-Thread last send {milliSinceLast}ms");
+                    nowTimestamp = DateTime.UtcNow;
+                    if (externalControlInfo == null)
+                    {
+                        await Task.Delay(10);
+                        continue;
+                    }
+                    try                    
+                    {
+                        double milliSinceLast = ((double)(nowTimestamp.TimeOfDay.TotalMilliseconds - lastTimestamp.TimeOfDay.TotalMilliseconds));
+                        double frameDuration = (1000 / refreshRate);
+                        double frameTime = nowTimestamp.TimeOfDay.TotalMilliseconds - frameDuration;
+                        if (milliSinceLast < frameDuration)
+                        {
+                            if (milliSinceLast > frameDuration * 2)
+                                _logger?.LogWarning($"Streaming-Thread last send {milliSinceLast}ms");
+                            Thread.SpinWait(10);
+                        }
+                        else
+                        {
+                            if (frameCounter == 0) //Key-Frame
+                            {
+#if DEBUG
+                                _logger?.LogDebug("Key-Frame");
+#endif
+                                if (panels.Count != 0)
+                                    await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(panels));
+                            }
+                            else //Delta-Frame
+                            {
+#if DEBUG
+                                _logger?.LogDebug("Delta-Frame");
+#endif
+                                var _panels = panels.Where(p => frameTime < p.LastUpdate);
+                                if (_panels.Count() > 0)
+                                    await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(_panels));
+                            }
+                            frameCounter++;
+                            lastTimestamp = DateTime.UtcNow;
+                            if (frameCounter >= refreshRate)
+                                frameCounter = 0;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _logger?.LogError(e, string.Empty);
+                    }
                     Thread.SpinWait(10);
                 }
-                else
-                {
-                    lastTimestamp = DateTime.Now.Ticks;
-                    if (frameCounter >= refreshRate)//KeyFrame every 1s
-                    {
-                        lock (changedPanels)
-                        {
-                            changedPanels.Clear();
-                            frameCounter = 0;
-                            if (panels.Count != 0)
-                                Communication.SendUDPCommand(externalControlInfo, Communication.CreateStreamingData(panels));
-                        }
-                    }
-                    else if (externalControlInfo != null)//DeltaFrame
-                    {
-                        Panel[] _panels = new Panel[0];
-                        lock (changedPanels)
-                        {
-                            if (changedPanels.Count != 0)
-                            {
-                                _panels = changedPanels.ToArray();
-                                changedPanels.Clear();
-                            }
-                        }
-                        if (_panels.Length > 0)
-                            Communication.SendUDPCommand(externalControlInfo, Communication.CreateStreamingData(_panels));
-                    }
-                    frameCounter++;
-                }
-            }
+            });
+            streamThread.Name = "NanoleafAPI-StreamThread";
+            streamThread.Priority = ThreadPriority.AboveNormal;
+            streamThread.IsBackground = true;
+            streamThread.Start();
         }
 
 
-        public bool SetPanelColor(int panelID, RGBW color)
+        public async Task<bool> SetPanelColor(int panelID, RGBW color)
         {
-            var panel = this.panels.FirstOrDefault(p => p.ID.Equals(panelID));
-            if (panel != null)
+            try
             {
-                panel.StreamingColor = color;
-                lock (changedPanels)
+                var panel = this.panels.FirstOrDefault(p => p.ID.Equals(panelID));
+                if (panel != null)
                 {
-                    if (!changedPanels.Contains(panel))
-                        changedPanels.Add(panel);
+                    panel.StreamingColor = color;
+                    return true;
                 }
-                return true;
+            }
+            catch (Exception e)
+            {
+                _logger?.LogError(e, string.Empty);
             }
             return false;
         }
@@ -579,6 +586,7 @@ namespace NanoleafAPI
         public void Dispose()
         {
             isDisposed = true;
+            streamThread = null;
         }
 
         public override string ToString()

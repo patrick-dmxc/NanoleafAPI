@@ -2,6 +2,7 @@ using NanoleafAPI;
 using static NanoleafAPI.StateEvent;
 using System.Diagnostics;
 using System.Net;
+using Microsoft.Extensions.Logging;
 
 namespace NanoleafAPI_Tests
 {
@@ -9,7 +10,7 @@ namespace NanoleafAPI_Tests
     {
         const string IP = "192.168.10.152";
         const string PORT = "16021";
-        const string AUTH_TOKEN = "xaH0B8bvK4IGeSrwn1tOHJr1MAD2PWBh";
+        const string AUTH_TOKEN = "7lOFIqsyqmO8c8H2bYco74z4fK2DmXqK";
         [SetUp]
         public void Setup()
         {
@@ -65,9 +66,9 @@ namespace NanoleafAPI_Tests
             {
                 rgbw = new Panel.RGBW(val, 0, 0, 0);
                 panels.ForEach(p => p.StreamingColor = rgbw);
-                Communication.SendUDPCommand(externalControlInfo, Communication.CreateStreamingData(panels));
+                await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(panels));
                 if (val % 2 == 0)
-                    Task.Delay(1).Wait();
+                    await Task.Delay(1);
                 val++;
             }
             while (val != 0);
@@ -77,25 +78,37 @@ namespace NanoleafAPI_Tests
                 rgbw = new Panel.RGBW(255, val, val, 0);
                 var controlPanel = panels.Where(p => p.Shape == PanelPosition.EShapeType.ControlSquarePrimary).ToList();
                 controlPanel.ForEach(p => p.StreamingColor = rgbw);
-                Communication.SendUDPCommand(externalControlInfo, Communication.CreateStreamingData(controlPanel));
+                await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(controlPanel));
                 if (val % 2 == 0)
-                    Task.Delay(1).Wait();
+                    await Task.Delay(1);
                 val++;
             }
             while (val != 0);
             do
             {
                 panels.ForEach(p => p.StreamingColor = new Panel.RGBW((byte)(p.StreamingColor.R - 1), (byte)(p.StreamingColor.G - 1), (byte)(p.StreamingColor.B - 1), 0));
-                Communication.SendUDPCommand(externalControlInfo, Communication.CreateStreamingData(panels));
+                await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(panels));
                 if (val % 2 == 0)
-                    Task.Delay(1).Wait();
+                    await Task.Delay(1);
                 val++;
             }
             while (panels.First().StreamingColor.R != 0);
 
+            byte[] randomValues = new byte[4];
+            for (byte b=0; b<byte.MaxValue; b++)
+            {
+                panels.ForEach(p =>
+                {
+                    Random.Shared.NextBytes(randomValues);
+                    p.StreamingColor = new Panel.RGBW(randomValues[0], randomValues[1], randomValues[2], randomValues[3]);
+                });
+                await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(panels));
+                    await Task.Delay(10);
+            }
+
             rgbw = new Panel.RGBW(0, 0, 0, 0);
             panels.ForEach(p => p.StreamingColor = rgbw);
-            Communication.SendUDPCommand(externalControlInfo, Communication.CreateStreamingData(panels));
+            await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(panels));
         }
         [Test]
         public async Task TestGetSetEffects()

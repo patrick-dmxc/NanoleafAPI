@@ -1,7 +1,4 @@
 ﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Drawing;
-using System.Linq;
 using static NanoleafAPI.PanelPosition;
 
 namespace NanoleafAPI
@@ -20,7 +17,7 @@ namespace NanoleafAPI
                     return;
 
                 x = value;
-                XChanged?.Invoke(this, EventArgs.Empty);
+                XChanged?.InvokeFailSafe(this, EventArgs.Empty);
             }
         }
         private int y;
@@ -33,7 +30,7 @@ namespace NanoleafAPI
                     return;
 
                 y = value;
-                YChanged?.Invoke(this, EventArgs.Empty);
+                YChanged?.InvokeFailSafe(this, EventArgs.Empty);
             }
         }
         private int orientation;
@@ -46,7 +43,7 @@ namespace NanoleafAPI
                     return;
 
                 orientation = value;
-                OrientationChanged?.Invoke(this, EventArgs.Empty);
+                OrientationChanged?.InvokeFailSafe(this, EventArgs.Empty);
             }
         }
         public EShapeType Shape { get; private set; }
@@ -61,7 +58,13 @@ namespace NanoleafAPI
                     return;
 
                 streamingColor = value;
+                LastUpdate = DateTime.UtcNow.TimeOfDay.TotalMilliseconds;
             }
+        }
+        public double LastUpdate
+        {
+            get;
+            private set;
         }
 
         public double SideLength { get; internal set; }

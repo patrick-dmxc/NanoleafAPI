@@ -13,5 +13,10 @@ namespace NanoleafAPI
 
         [JsonProperty("positionData")]
         public IEnumerable<PanelPosition> PanelPositions { get; set; }
+
+        public override string ToString()
+        {
+            return $"Layout of {NumberOfPanels} Panels";
+        }
     }
 }

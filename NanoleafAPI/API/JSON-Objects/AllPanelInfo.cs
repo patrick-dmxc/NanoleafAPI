@@ -30,5 +30,10 @@ namespace NanoleafAPI
 
         [JsonProperty("state")]
         public States State { get; set; }
+
+        public override string ToString()
+        {
+            return $"Name: {Name} Model: {Model} SN: {SerialNumber} FW: {FirmwareVersion} HW: {HardwareVersion} Manufacturer: {Manufacturer}";
+        }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace NanoleafAPI
 {
@@ -50,7 +51,7 @@ namespace NanoleafAPI
             }
             this.TouchedPanelsNumber-=this._touchPanelEvents.Count(p => p.Type == ETouch.Up || p.Type == ETouch.UNKNOWN);
 
-            this.Timestamp = DateTime.Now.Ticks;
+            this.Timestamp = DateTime.UtcNow.Ticks;
         }
         public static TouchEvent FromArray(byte[] array)
         {
@@ -98,11 +99,25 @@ namespace NanoleafAPI
             {
                 return (b & (1 << bitNumber - 1)) != 0;
             }
+
+            public override string ToString()
+            {
+                return $"ID: {PanelId} Strength: {Strength} Type: {Type}";
+            }
         }
 
         public static explicit operator TouchEvent(System.EventArgs v)
         {
             throw new System.NotImplementedException();
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"Touched: {TouchedPanelsNumber}");
+            foreach (var tp in _touchPanelEvents)
+                sb.AppendLine(tp.ToString());
+            return sb.ToString();
         }
     }
 }

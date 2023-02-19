@@ -12,5 +12,10 @@ namespace NanoleafAPI
 
         [JsonProperty("max")]
         public int Max { get; set; }
+
+        public override string ToString()
+        {
+            return $"Value: {Value} Min: {Min} Max: {Max}";
+        }
     }
 }

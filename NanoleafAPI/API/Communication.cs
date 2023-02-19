@@ -2,17 +2,15 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Linq;
 using System.Text;
-using static NanoleafAPI.TouchEvent;
 using Zeroconf;
-using System.Xml.Linq;
-using System;
+using static NanoleafAPI.TouchEvent;
 
 namespace NanoleafAPI
 {
@@ -24,7 +22,7 @@ namespace NanoleafAPI
             get
             {
                 if (__logger == null)
-                    __logger = Tools.LoggerFactory.CreateLogger(nameof(Communication));
+                    __logger = Tools.LoggerFactory?.CreateLogger(nameof(Communication));
                 return __logger;
             }
         }
@@ -32,6 +30,10 @@ namespace NanoleafAPI
         static CancellationToken token = tokenSource.Token;
 
         private static List<IPAddress> ipAddresses = new List<IPAddress>();
+
+        private static Socket udpCommandSocket = null;
+        private static ConcurrentDictionary<string, IPEndPoint> udpCommandEndpoints = new ConcurrentDictionary<string, IPEndPoint>();
+
         private static ReadOnlyCollection<IPAddress> IPAddresses
         {
 
@@ -79,6 +81,7 @@ namespace NanoleafAPI
                 Timeout = 1000
             };
             request.AddJsonBody(contentString);
+            _logger?.LogDebug($"Put: {address} {contentString}");
             return await restClient.ExecuteAsync(request).ConfigureAwait(false);
         }
 
@@ -128,7 +131,7 @@ namespace NanoleafAPI
                     }
                 _logger?.LogDebug("SSDP DiscoverTask started");
                 while (discoverySSDPTaskRunning)
-                    Task.Delay(500);
+                    await Task.Delay(500);
                 foreach (var client in runningSSDPClients)
                 {
                     if (client.Value.Client != null)
@@ -172,12 +175,13 @@ namespace NanoleafAPI
                         string id = array.FirstOrDefault(s => s.StartsWith("nl-deviceid"))?.Replace("nl-deviceid: ", "");
                         var device = new DiscoveredDevice(remoteAddress, port, name, id, type); ;
                         discoveredDevices.Add(device);
-                        DeviceDiscovered?.Invoke(null, new DiscoveredEventArgs(device));
+                        _logger?.LogDebug($"Device Discovered via SSDP: {device}");
+                        DeviceDiscovered?.InvokeFailSafe(null, new DiscoveredEventArgs(device));
                     }
                 }
                 catch(Exception ex)
                 {
-                    _logger.LogWarning("Not able to decode the SSDP Datagram");
+                    _logger?.LogWarning("Not able to decode the SSDP Datagram");
                 }
             }
         }
@@ -228,78 +232,18 @@ namespace NanoleafAPI
 
                             var device = new DiscoveredDevice(ip, port, name, id, type); ;
                             discoveredDevices.Add(device);
-                            DeviceDiscovered?.Invoke(null, new DiscoveredEventArgs(device));
+                            _logger?.LogDebug($"Device Discovered via mDNS: {device}");
+                            DeviceDiscovered?.InvokeFailSafe(null, new DiscoveredEventArgs(device));
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogWarning("Not able to decode the mDNS Datagram");
+                            _logger?.LogWarning("Not able to decode the mDNS Datagram");
                         }
                     }
-                    Task.Delay(500);
+                    await Task.Delay(500);
                 }
             }, token);
             discovermDNSTask.Start();
-        }
-        static void OnmDNSReceived(IAsyncResult result)
-        {
-            if (result.AsyncState is UdpState)
-            {
-                UdpClient client = ((UdpState)result.AsyncState).UdpClient;
-                IPEndPoint e = ((UdpState)result.AsyncState).EndPoint;
-                if (client.Client == null)
-                    return;
-                byte[] buffer = client.EndReceive(result, ref e);
-                // Handle received data in buffer, send reply to client etc...
-
-                string message = Encoding.Default.GetString(buffer);
-                // Start a new async receive on the client to receive more data.
-                client.BeginReceive(OnmDNSReceived, result.AsyncState);
-                try
-                {
-                    if (message.Contains("nanoleaf"))
-                    {
-                        string remoteAddress = e.Address.ToString();
-                        if (discoveredDevices.Any(d => d.IP.Equals(remoteAddress)))
-                            return;
-                        var array = message.Replace("\r\n", "|").Split('|');
-                        EDeviceType type = EDeviceType.UNKNOWN;
-                        switch (array.FirstOrDefault(s => s.StartsWith("NT"))?.Replace("NT: ", ""))
-                        {
-                            case "nanoleaf:nl22":
-                            case "Nanoleaf_aurora:light":
-                                type = EDeviceType.LightPanles;
-                                break;
-                            case "nanoleaf:nl29":
-                                type = EDeviceType.Canvas;
-                                break;
-                            case "nanoleaf:nl42":
-                                type = EDeviceType.Shapes;
-                                break;
-                            case "nanoleaf:nl45":
-                                type = EDeviceType.Essentials;
-                                break;
-                            case "nanoleaf:nl52":
-                                type = EDeviceType.Elements;
-                                break;
-                            case "nanoleaf:nl59":
-                                type = EDeviceType.Lines;
-                                break;
-                        }
-                        string url = array.FirstOrDefault(s => s.StartsWith("Location"))?.Replace("Location: ", "").Replace("http://", "");
-                        string ip = url.Split(':')[0];
-                        string port = url.Split(':')[1];
-                        string name = array.FirstOrDefault(s => s.StartsWith("nl-devicename"))?.Replace("nl-devicename: ", "");
-                        string id = array.FirstOrDefault(s => s.StartsWith("nl-deviceid"))?.Replace("nl-deviceid: ", "");
-                        var device = new DiscoveredDevice(remoteAddress, port, name, id, type); ;
-                        discoveredDevices.Add(device);
-                        DeviceDiscovered?.Invoke(null, new DiscoveredEventArgs(device));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning("Not able to decode the SSDP Datagram");
-                }
-            }
         }
         public static void StopDiscoverymDNSTask()
         {
@@ -323,15 +267,29 @@ namespace NanoleafAPI
             string address = $"http://{ip}:{port}/api/v1/new";
             using (HttpClient hc = new HttpClient())
             {
-                StringContent queryString = new StringContent("");
-                var response = hc.PostAsync(address, queryString).GetAwaiter().GetResult();
-                var responseStrings = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    StringContent queryString = new StringContent("");
+                    _logger?.LogDebug($"Request auth_token for \"{ip}\"");
+                    var response = hc.PostAsync(address, queryString).GetAwaiter().GetResult();
+                    var responseStrings = await response.Content.ReadAsStringAsync();
 
-                var jObject = JObject.Parse(responseStrings);
-                result = jObject["auth_token"].ToString();
-
+                    var jObject = JObject.Parse(responseStrings);
+                    result = jObject["auth_token"].ToString();
+                    result = result.Replace("\"", "");
+                    _logger?.LogDebug($"Received auth_token: {result}");
+                }
+                catch (HttpRequestException he)
+                {
+                    _logger?.LogDebug(he, string.Empty);
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
-            return result.Replace("\"", "");
+            return result;
         }
         public static async Task<bool> DeleteUser(string ip, string port, string auth_token)
         {
@@ -339,8 +297,25 @@ namespace NanoleafAPI
             string address = $"http://{ip}:{port}/api/v1/{auth_token}";
             using (HttpClient hc = new HttpClient())
             {
-                var response = await hc.DeleteAsync(address);
-                result = response.StatusCode == System.Net.HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request deletion of auth_token for \"{ip}\"");
+                    var response = await hc.DeleteAsync(address);
+                    result = response.StatusCode == System.Net.HttpStatusCode.NoContent;
+                    if (result)
+                        _logger?.LogDebug($"Deleted auth_token successfull");
+                    else
+                        _logger?.LogDebug($"Deleted auth_token unsuccessfull");
+                }
+                catch (HttpRequestException he)
+                {
+                    _logger?.LogDebug(he, string.Empty);
+                    return false;
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -354,15 +329,19 @@ namespace NanoleafAPI
             {
                 try
                 {
+                    _logger?.LogDebug($"Request all Panel info for \"{ip}\"");
                     var response = await hc.GetAsync(address);
                     if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     {
                         string res = await response.Content.ReadAsStringAsync();
                         result = JsonConvert.DeserializeObject<AllPanelInfo>(res);
+                        if(result!=null)
+                            _logger?.LogDebug($"Received all Panel info: {result}");
                     }
                 }
-                catch (HttpRequestException)
+                catch (HttpRequestException he)
                 {
+                    _logger?.LogDebug(he, string.Empty);
                     return null;
                 }
                 catch (Exception e)
@@ -383,12 +362,17 @@ namespace NanoleafAPI
             {
                 try
                 {
+                    _logger?.LogDebug($"Request OnOff State for \"{ip}\"");
                     var response = await hc.GetAsync(address);
                     if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        _logger?.LogDebug($"Received OnOff State: {result}");
                         result = JsonConvert.DeserializeObject<StateOnOff>(await response.Content.ReadAsStringAsync()).On;
+                    }
                 }
-                catch (HttpRequestException)
+                catch (HttpRequestException he)
                 {
+                    _logger?.LogDebug(he, string.Empty);
                     return false;
                 }
                 catch (Exception e)
@@ -712,9 +696,14 @@ namespace NanoleafAPI
             {
                 try
                 {
+                    _logger?.LogDebug($"Request Panel Layout global orientation for \"{ip}\"");
                     var response = await hc.GetAsync(address);
                     if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
                         result = JsonConvert.DeserializeObject<StateInfo>(await response.Content.ReadAsStringAsync()).Value;
+                        if (result != null)
+                            _logger?.LogDebug($"Received Panel Layout global orientation: {result}");
+                    }
                 }
                 catch (HttpRequestException)
                 {
@@ -746,11 +735,14 @@ namespace NanoleafAPI
             {
                 try
                 {
+                    _logger?.LogDebug($"Request Panel Layout for \"{ip}\"");
                     var response = await hc.GetAsync(address);
                     if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     {
                         string res = await response.Content.ReadAsStringAsync();
                         result = JsonConvert.DeserializeObject<Layout>(res);
+                        if (result != null)
+                            _logger?.LogDebug($"Received Panel Layout: {result}");
                     }
                 }
                 catch (HttpRequestException)
@@ -786,6 +778,7 @@ namespace NanoleafAPI
             string address = $"http://{ip}:{port}/api/v1/{auth_token}/effects";
             string contentString = "{\"write\": {\"command\": \"display\", \"animType\": \"extControl\", \"extControlVersion\": \"v2\"}}";
 
+            _logger?.LogDebug($"Enable streamin for \"{ip}\"");
             var response = await put(address, contentString);
 
             switch (deviceType)
@@ -805,7 +798,7 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static byte[] CreateStreamingData(IEnumerable<Panel> panels)
+        public static async Task<byte[]> CreateStreamingData(IEnumerable<Panel> panels)
         {
             byte[] result = null;
             using (MemoryStream ms = new MemoryStream())
@@ -836,14 +829,28 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static void SendUDPCommand(ExternalControlConnectionInfo _externalControlConnectionInfo, params byte[] data)
+        public static async Task SendUDPCommand(ExternalControlConnectionInfo _externalControlConnectionInfo, params byte[] data)
         {
-            if (_externalControlConnectionInfo == null)
-                return;
-            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            var endpoint = new IPEndPoint(IPAddress.Parse(_externalControlConnectionInfo.StreamIPAddress), _externalControlConnectionInfo.StreamPort);
-            socket.SendTo(data, endpoint);
-            socket.Close();
+            try
+            {
+                if (_externalControlConnectionInfo == null)
+                    return;
+
+                if (udpCommandSocket == null)
+                    udpCommandSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+                IPEndPoint endpoint = null;
+                if (udpCommandEndpoints.ContainsKey(_externalControlConnectionInfo.StreamIPAddress))
+                    endpoint = udpCommandEndpoints[_externalControlConnectionInfo.StreamIPAddress];
+                else
+                    endpoint = udpCommandEndpoints[_externalControlConnectionInfo.StreamIPAddress] = new IPEndPoint(IPAddress.Parse(_externalControlConnectionInfo.StreamIPAddress), _externalControlConnectionInfo.StreamPort);
+
+                await udpCommandSocket.SendToAsync(data, SocketFlags.None, endpoint);
+            }
+            catch(Exception e)
+            {
+                _logger?.LogError(e, string.Empty);
+            }
         }
         #endregion
 
@@ -864,7 +871,7 @@ namespace NanoleafAPI
 
         public static void StartEventListener()
         {
-            _logger.LogDebug("Start Event listener");
+            _logger?.LogDebug("Start Event listener");
             if (eventCleanLoop == null)
             {
                 eventCleanLoop = new Thread(() =>
@@ -881,7 +888,7 @@ namespace NanoleafAPI
                                 var hovering = last.Value.TouchPanelEvents.Where(p => p.Type == ETouch.Hover).ToArray();
                                 if (hovering.Length > 0)
                                 {
-                                    long timestamp = DateTime.Now.Ticks;
+                                    long timestamp = DateTime.UtcNow.Ticks;
                                     if (timestamp - last.Value.Timestamp >= 5000000)
                                     {
                                         outgoingEvents[last.Key] = new TouchEvent(last.Value.TouchedPanelsNumber - hovering.Length, hovering.Select(h => new TouchPanelEvent(h.PanelId, ETouch.Up)).ToArray());
@@ -892,7 +899,8 @@ namespace NanoleafAPI
                         foreach (var _event in outgoingEvents)
                         {
                             lastTouchEvent[_event.Key] = _event.Value;
-                            StaticOnTouchEvent?.Invoke(null, new TouchEventArgs(_event.Key, _event.Value));
+                            _logger?.LogDebug($"Event occured: {_event}");
+                            StaticOnTouchEvent?.InvokeFailSafe(null, new TouchEventArgs(_event.Key, _event.Value));
                         }
                     }
                 });
@@ -927,7 +935,8 @@ namespace NanoleafAPI
                                 lock (lastTouchEvent)
                                 {
                                     lastTouchEvent[ip] = touchEvent;
-                                    StaticOnTouchEvent?.Invoke(null, new TouchEventArgs(ip, touchEvent));
+                                    _logger?.LogDebug($"Event occured: {touchEvent}");
+                                    StaticOnTouchEvent?.InvokeFailSafe(null, new TouchEventArgs(ip, touchEvent));
                                 }
                             }
                             catch (Exception)
@@ -1048,19 +1057,19 @@ namespace NanoleafAPI
             {
                 case 1:
                     StateEvents stateEvents = JsonConvert.DeserializeObject<StateEvents>(eventData);
-                    StaticOnStateEvent?.Invoke(null, new StateEventArgs(ip, stateEvents));
+                    StaticOnStateEvent?.InvokeFailSafe(null, new StateEventArgs(ip, stateEvents));
                     break;
                 case 2:
                     LayoutEvent layoutEvent = JsonConvert.DeserializeObject<LayoutEvent>(eventData, LayoutEventConverter.Instance);
-                    StaticOnLayoutEvent?.Invoke(null, new LayoutEventArgs(ip, layoutEvent));
+                    StaticOnLayoutEvent?.InvokeFailSafe(null, new LayoutEventArgs(ip, layoutEvent));
                     break;
                 case 3:
                     EffectEvents effectEvent = JsonConvert.DeserializeObject<EffectEvents>(eventData);
-                    StaticOnEffectEvent?.Invoke(null, new EffectEventArgs(ip, effectEvent));
+                    StaticOnEffectEvent?.InvokeFailSafe(null, new EffectEventArgs(ip, effectEvent));
                     break;
                 case 4:
                     GestureEvents gestureEvents = JsonConvert.DeserializeObject<GestureEvents>(eventData);
-                    StaticOnGestureEvent?.Invoke(null, new GestureEventArgs(ip, gestureEvents));
+                    StaticOnGestureEvent?.InvokeFailSafe(null, new GestureEventArgs(ip, gestureEvents));
                     break;
             }
         }
@@ -1075,6 +1084,7 @@ namespace NanoleafAPI
         private static bool shutdown = false;
         public static void Shutdown()
         {
+            _logger?.LogDebug($"Shutdown");
             shutdown = true;
             tokenSource.Cancel();
             Task.Delay(1000).GetAwaiter();
@@ -1082,14 +1092,12 @@ namespace NanoleafAPI
             discoverSSDPTask = null;
             discoverySSDPTaskRunning = false;
 
-            eventListenerThread?.Abort();
             eventListenerThread = null;
-
-            eventCleanLoop?.Abort();
             eventCleanLoop = null;
 
             tokenSource = new CancellationTokenSource();
             token = tokenSource.Token;
+            _logger?.LogDebug($"Shutdown done!");
         }
 #if DEBUG //Tests
         public static void Restart()
