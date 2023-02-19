@@ -235,6 +235,7 @@ namespace NanoleafAPI
         }
         public Controller(string ip, string port, string auth_token = null)
         {
+            _logger = Tools.LoggerFactory.CreateLogger<Controller>();
             IP = ip;
             Port = port;
             Auth_token = auth_token;

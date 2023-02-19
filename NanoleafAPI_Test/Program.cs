@@ -16,10 +16,14 @@ namespace NanoleafTest
         static Controller controller = null;
         static void Main(string[] args)
         {
-            var loggerProvider = new LoggerProvider();
-            Tools.LoggerFactory = new LoggerFactory(new[] { loggerProvider });
-            _logger = Tools.LoggerFactory.CreateLogger("Test");
-            Console.WriteLine("Press Enter 5 times for Shutdown");
+            var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole();
+            });
+
+            Tools.LoggerFactory = loggerFactory;
+            _logger = Tools.LoggerFactory.CreateLogger("NanoleafTest");
+            _logger.LogInformation("Press Enter 5 times for Shutdown");
             Communication.StartEventListener();
             Communication.DeviceDiscovered += Communication_DeviceDiscovered;
             Communication.StaticOnTouchEvent += Communication_StaticOnTouchEvent;
@@ -96,7 +100,7 @@ namespace NanoleafTest
             _logger.LogInformation($"Device Discovered: {e.DiscoveredDevice.ToString()}");
         }
 
-        private class LoggerProvider: ILoggerProvider
+        private class LoggerProvider : ILoggerProvider
         {
             public LoggerProvider()
             {
@@ -112,7 +116,7 @@ namespace NanoleafTest
             {
             }
 
-            private class Logger: ILogger
+            private class Logger : ILogger
             {
                 public Logger(string categoryName)
                 {
@@ -128,7 +132,7 @@ namespace NanoleafTest
 
                 public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
                 {
-                    Console.WriteLine(formatter.Invoke(state,exception));
+                    Console.WriteLine(formatter.Invoke(state, exception));
                 }
             }
         }
