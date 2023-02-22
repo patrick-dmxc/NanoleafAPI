@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
+﻿using System.Collections.ObjectModel;
 using System.Text;
 
 namespace NanoleafAPI
@@ -40,7 +36,7 @@ namespace NanoleafAPI
             byte[] buffer;
             using (MemoryStream ms = new MemoryStream())
             {
-                ms.Write(array, 2, array.Length-2);
+                ms.Write(array, 2, array.Length - 2);
                 ms.Position = 0;
                 for (int i = 0; i < TouchedPanelsNumber; i++)
                 {
@@ -49,7 +45,7 @@ namespace NanoleafAPI
                     this._touchPanelEvents.Add(TouchPanelEvent.FromArray(buffer));
                 }
             }
-            this.TouchedPanelsNumber-=this._touchPanelEvents.Count(p => p.Type == ETouch.Up || p.Type == ETouch.UNKNOWN);
+            this.TouchedPanelsNumber -= this._touchPanelEvents.Count(p => p.Type == ETouch.Up || p.Type == ETouch.UNKNOWN);
 
             this.Timestamp = DateTime.UtcNow.Ticks;
         }
@@ -63,8 +59,8 @@ namespace NanoleafAPI
             public int? PanelIdSwipedFrom { get; private set; } = null;
             public ETouch Type { get; private set; }
             public double Strength { get; private set; }
-            
-            internal TouchPanelEvent(int panelId, ETouch type, double strength=0, int? panelIdSwipedFrom=null)
+
+            internal TouchPanelEvent(int panelId, ETouch type, double strength = 0, int? panelIdSwipedFrom = null)
             {
                 this.PanelId = panelId;
                 this.Type = type;

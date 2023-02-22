@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NanoleafAPI
+﻿namespace NanoleafAPI
 {
     public readonly struct DiscoveredDevice
     {
@@ -9,7 +7,7 @@ namespace NanoleafAPI
         public readonly string Name;
         public readonly string ID;
         public readonly EDeviceType DeviceTyp;
-        public DiscoveredDevice(string ip, string port, string name, string id, EDeviceType deviceType) :this()
+        public DiscoveredDevice(string ip, string port, string name, string id, EDeviceType deviceType) : this()
         {
             IP = ip;
             Port = port;

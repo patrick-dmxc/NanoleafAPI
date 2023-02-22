@@ -3,7 +3,6 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Net.NetworkInformation;
-using System.Reactive.Concurrency;
 using static NanoleafAPI.Panel;
 
 namespace NanoleafAPI
@@ -252,7 +251,7 @@ namespace NanoleafAPI
             IP = ip;
             Port = port;
             Auth_token = auth_token;
-            _ =startServices();
+            _ = startServices();
         }
 
         ~Controller()
@@ -434,14 +433,14 @@ namespace NanoleafAPI
                 }
             }
             bool panelRemoved = false;
-            panels.RemoveAll((p) => 
-            { 
+            panels.RemoveAll((p) =>
+            {
                 bool remove = !ids.Any(id => id.Equals(p.ID));
                 if (remove)
                     panelRemoved = true;
                 return remove;
             });
-            if(panelRemoved)
+            if (panelRemoved)
                 PanelRemoved?.InvokeFailSafe(null, EventArgs.Empty);
 
             PanelLayoutChanged?.InvokeFailSafe(null, EventArgs.Empty);
@@ -466,7 +465,7 @@ namespace NanoleafAPI
                         await Task.Delay(10);
                         continue;
                     }
-                    try                    
+                    try
                     {
                         double milliSinceLast = ((double)(nowTimestamp.TimeOfDay.TotalMilliseconds - lastTimestamp.TimeOfDay.TotalMilliseconds));
                         double frameDuration = (1000 / refreshRate);
@@ -534,7 +533,7 @@ namespace NanoleafAPI
             return false;
         }
 
-        public void SelfDestruction(bool deleteUser=false)
+        public void SelfDestruction(bool deleteUser = false)
         {
             Dispose();
             RestoreParameters();
@@ -577,7 +576,7 @@ namespace NanoleafAPI
                 // Setting the power state must be the last thing to do due to the fact that all other commands activate the Nanoleafs
                 await Communication.SetStateOnOff(IP, Port, Auth_token, PowerOnStored);
             }
-            finally 
+            finally
             {
                 _logger?.LogInformation(string.Format("Reset parameters for {0}", this));
             }

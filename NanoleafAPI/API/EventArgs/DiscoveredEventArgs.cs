@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NanoleafAPI
+﻿namespace NanoleafAPI
 {
     public class DiscoveredEventArgs : EventArgs
     {

@@ -17,7 +17,7 @@ namespace NanoleafAPI
     public class Communication
     {
         private static ILogger __logger;
-        private static  ILogger _logger
+        private static ILogger _logger
         {
             get
             {
@@ -45,11 +45,11 @@ namespace NanoleafAPI
 
         public static void RegisterIPAddress(IPAddress ipAddress)
         {
-            if(ipAddresses.Any(ip=>ip.Equals(ipAddress)))
+            if (ipAddresses.Any(ip => ip.Equals(ipAddress)))
             {
                 _logger?.LogDebug($"The IP-Address: {ipAddress} is already registerd");
-                    return;
-            }    
+                return;
+            }
             ipAddresses.Add(ipAddress);
             _logger?.LogDebug($"Registered IP-Address: {ipAddress}");
         }
@@ -179,7 +179,7 @@ namespace NanoleafAPI
                         DeviceDiscovered?.InvokeFailSafe(null, new DiscoveredEventArgs(device));
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _logger?.LogWarning("Not able to decode the SSDP Datagram");
                 }
@@ -335,7 +335,7 @@ namespace NanoleafAPI
                     {
                         string res = await response.Content.ReadAsStringAsync();
                         result = JsonConvert.DeserializeObject<AllPanelInfo>(res);
-                        if(result!=null)
+                        if (result != null)
                             _logger?.LogDebug($"Received all Panel info: {result}");
                     }
                 }
@@ -847,7 +847,7 @@ namespace NanoleafAPI
 
                 await udpCommandSocket.SendToAsync(data, SocketFlags.None, endpoint);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 _logger?.LogError(e, string.Empty);
             }
@@ -1012,7 +1012,7 @@ namespace NanoleafAPI
                                 }
                                 catch (Exception e) when (e is IOException || e is WebException)//Timeout! Restart Listener without Logging
                                 {
-                                   //// NanoleafPlugin.Log.LogDebug("Restarting EventListener because of:" + Environment.NewLine, e.Message);
+                                    //// NanoleafPlugin.Log.LogDebug("Restarting EventListener because of:" + Environment.NewLine, e.Message);
                                     restart = true;
                                     isListening = false;
                                     goto DISPOSE;
@@ -1023,7 +1023,7 @@ namespace NanoleafAPI
                                 }
                                 catch (Exception e)
                                 {
-                                   //// NanoleafPlugin.Log.ErrorOrDebug(string.Empty, e);
+                                    //// NanoleafPlugin.Log.ErrorOrDebug(string.Empty, e);
                                 }
                                 ms.Write(buffer, 0, buffer.Length);
                             }
