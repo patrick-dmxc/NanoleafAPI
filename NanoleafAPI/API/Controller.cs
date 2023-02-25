@@ -205,7 +205,7 @@ namespace NanoleafAPI
         public event EventHandler AuthTokenReceived;
         public event EventHandler UpdatedInfos;
 
-        private ExternalControlConnectionInfo externalControlInfo;
+        private ExternalControlConnectionInfo? externalControlInfo;
         private Thread? streamThread;
 
         private double refreshRate = 44;
@@ -333,16 +333,43 @@ namespace NanoleafAPI
                 await BackupSettings(infos);
                 await UpdateInfos(infos);
                 Communication.StartEventListener(IP, Port, Auth_token);
-                var eci= await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
-                if (eci != null)
-                    externalControlInfo = eci;
-                else
-                    _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
             }
             catch (Exception e)
             {
                 _logger?.LogError(e, string.Empty);
             }
+        }
+        public async Task StartStreaming()
+        {
+            _logger?.LogInformation($"Starting Stream");
+            if (Tools.IsTokenValid(Auth_token))
+            {
+
+                var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
+                if (eci != null)
+                    externalControlInfo = eci;
+                else
+                    _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
+
+                _logger?.LogInformation($"Started Stream");
+            }
+            else
+                _logger?.LogInformation($"{nameof(Auth_token)} is invalid");
+        }
+        public async Task StopStreaming(string? effect = null)
+        {
+            _logger?.LogInformation($"Stopping Stream");
+            externalControlInfo = null;
+            if (Tools.IsTokenValid(Auth_token))
+            {
+                if (string.IsNullOrWhiteSpace(effect))
+                    effect = SelectedEffectStored;
+
+                await Communication.SetSelectedEffect(IP, Port, Auth_token, effect);
+                _logger?.LogInformation($"Stopped Stream");
+            }
+            else
+                _logger?.LogInformation($"{nameof(Auth_token)} is invalid");
         }
 
         private async Task UpdateInfos(AllPanelInfo allPanelInfo)
