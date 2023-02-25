@@ -15,7 +15,6 @@ namespace NanoleafAPI
 
         public string? Auth_token { get; private set; } = null;
         private bool isDisposed = false;
-        private Ping ping = new Ping();
 
         public string Name { get; private set; }
         public string Model { get; private set; }
@@ -220,73 +219,6 @@ namespace NanoleafAPI
         }
 
 #pragma warning disable CS8618
-        public Controller(JToken json)
-        {
-            _logger = Tools.LoggerFactory.CreateLogger<Controller>();
-#pragma warning disable CS8600
-#pragma warning disable CS8601
-#pragma warning disable CS8604
-
-            IP = (string)json[nameof(IP)];
-            Port = (string)json[nameof(Port)];
-            Auth_token = (string)json[nameof(Auth_token)];
-            Name = (string)json[nameof(Name)];
-            Model = (string)json[nameof(Model)];
-            Manufacturer = (string)json[nameof(Manufacturer)];
-            SerialNumber = (string)json[nameof(SerialNumber)];
-            HardwareVersion = (string)json[nameof(HardwareVersion)];
-            FirmwareVersion = (string)json[nameof(FirmwareVersion)];
-            DeviceType = Tools.ModelStringToEnum(Model);
-
-            NumberOfPanels = (uint)json[nameof(NumberOfPanels)];
-            globalOrientation = (ushort)json[nameof(GlobalOrientation)];
-            GlobalOrientationMin = (ushort)json[nameof(GlobalOrientationMin)];
-            GlobalOrientationMax = (ushort)json[nameof(GlobalOrientationMax)];
-
-            //EffectList = (string[])json[nameof(EffectList)].Select(c=>c.)
-            SelectedEffect = (string)json[nameof(SelectedEffect)];
-            PowerOn = (bool)json[nameof(PowerOn)];
-            PowerOff = (bool)json[nameof(PowerOff)];
-
-            brightness = (ushort)json[nameof(Brightness)];
-            BrightnessMin = (ushort)json[nameof(BrightnessMin)];
-            BrightnessMax = (ushort)json[nameof(BrightnessMax)];
-            hue = (ushort)json[nameof(Hue)];
-            HueMin = (ushort)json[nameof(HueMin)];
-            HueMax = (ushort)json[nameof(HueMax)];
-            saturation = (ushort)json[nameof(Saturation)];
-            SaturationMin = (ushort)json[nameof(SaturationMin)];
-            SaturationMax = (ushort)json[nameof(SaturationMax)];
-            colorTemprature = (ushort)json[nameof(ColorTemprature)];
-            ColorTempratureMin = (ushort)json[nameof(ColorTempratureMin)];
-            ColorTempratureMax = (ushort)json[nameof(ColorTempratureMax)];
-            ColorMode = (string)json[nameof(ColorMode)];
-
-            //Backup current state to restore it on shutdown
-            GlobalOrientationStored = globalOrientation;
-            if (string.IsNullOrWhiteSpace(SelectedEffect))
-                throw new NullReferenceException($"{nameof(SelectedEffect)} is null!");
-            SelectedEffectStored = SelectedEffect;
-            PowerOnStored = PowerOn;
-            BrightnessStored = brightness;
-            HueStored = hue;
-            SaturationStored = saturation;
-            ColorTempratureStored = colorTemprature;
-            if (string.IsNullOrWhiteSpace(ColorMode))
-                throw new NullReferenceException($"{nameof(ColorMode)} is null!");
-            ColorModeStored = ColorMode;
-
-            var panels = json[nameof(Panels)];
-            if (panels != null)
-                foreach (var p in panels)
-                    this.panels.Add(new Panel(p));
-
-
-#pragma warning restore CS8600
-#pragma warning restore CS8601
-#pragma warning restore CS8604
-            _ = startServices();
-        }
         public Controller(string ip, string port, string? auth_token = null)
         {
             _logger = Tools.LoggerFactory.CreateLogger<Controller>();
@@ -365,7 +297,17 @@ namespace NanoleafAPI
                         if (allPanelInfo != null)
                             await UpdateInfos(allPanelInfo);
                         else
+                        {
                             _logger?.LogDebug($"{nameof(Communication.GetAllPanelInfo)} returned null!");
+                            _logger?.LogDebug($"Checking Connection to {IP}");
+                            if (await Communication.Ping(IP, Port))
+                            {
+                                _logger?.LogDebug($"Reset Auth_Token for {IP}");
+                                Auth_token = null;
+                                await RequestToken();
+                                _logger?.LogDebug($"New Auth_Token for {IP} is {Auth_token}");
+                            }
+                        }
                     }
                 }
                 catch (Exception e)

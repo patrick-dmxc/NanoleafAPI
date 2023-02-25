@@ -27,6 +27,16 @@ namespace NanoleafAPI_Tests
                 await Task.Delay(100);
             }
         }
+        [Test]
+        public async Task TestPingFreakOut()
+        {
+            for (int i = 0; i < 1000; i++)
+            {
+                bool? response = await Communication.Ping(IP, PORT);
+
+                Assert.That(response, Is.True);
+            }
+        }
 
         [Test]
         public async Task TestAddUserAndDeleteUserAsync()
