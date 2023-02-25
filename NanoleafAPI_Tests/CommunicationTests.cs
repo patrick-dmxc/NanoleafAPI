@@ -12,6 +12,8 @@ namespace NanoleafAPI_Tests
         [SetUp]
         public void Setup()
         {
+            Tools.LoggerFactory = new TestLoggerFactory();
+
             Communication.RegisterIPAddress(IPAddress.Any);
         }
 
@@ -19,12 +21,16 @@ namespace NanoleafAPI_Tests
         [Test]
         public async Task TestAddUserAndDeleteUserAsync()
         {
-            string? authToken = await Communication.AddUser(IP, PORT);
+            for (int i = 0; i < 10; i++)
+            {
+                string? authToken = await Communication.AddUser(IP, PORT);
 
-            Assert.That(authToken, Is.Not.Null);
-            Assert.That(Tools.IsTokenValid(authToken), Is.True);
-            bool? sucess = await Communication.DeleteUser(IP, PORT, authToken);
-            Assert.That(sucess, Is.True);
+                Assert.That(authToken, Is.Not.Null);
+                Assert.That(Tools.IsTokenValid(authToken), Is.True);
+                bool? sucess = await Communication.DeleteUser(IP, PORT, authToken);
+                Assert.That(sucess, Is.True);
+                await Task.Delay(100);
+            }
         }
         [Test]
         public async Task TestManyGetMethodes()

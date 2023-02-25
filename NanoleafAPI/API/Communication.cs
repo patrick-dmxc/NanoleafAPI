@@ -295,10 +295,8 @@ namespace NanoleafAPI
         #region User
         public static async Task<string?> AddUser(string ip, string port)
         {
-            validateCredentials(ip, port);
-
             string? result = null;
-            string address = $"http://{ip}:{port}/api/v1/new";
+            string address = createUrl(ip, port, "new");
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -329,10 +327,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> DeleteUser(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}";
+            string address = createUrl(ip, port, auth_token, string.Empty);
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -358,10 +354,8 @@ namespace NanoleafAPI
         #region All Panel Info
         public static async Task<AllPanelInfo?> GetAllPanelInfo(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             AllPanelInfo? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}";
+            string address = createUrl(ip, port, auth_token, string.Empty);
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -396,10 +390,8 @@ namespace NanoleafAPI
         #region On/Off
         public static async Task<bool?> GetStateOnOff(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state/on";
+            string address = createUrl(ip, port, auth_token, "state/on");
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -431,10 +423,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> SetStateOnOff(string ip, string port, string auth_token, bool value)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state";
+            string address = createUrl(ip, port, auth_token, "state");
             string contentString = value ? "{\"on\" : {\"value\": true}}" : "{\"on\" : {\"value\": false}}";
 
             try
@@ -446,10 +436,6 @@ namespace NanoleafAPI
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetStateOnOff)} response: successfull");
             }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
-            }
             catch (Exception e)
             {
                 _logger?.LogWarning(e, string.Empty);
@@ -460,10 +446,8 @@ namespace NanoleafAPI
         #region Brightness
         public static async Task<ushort?> GetStateBrightness(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             ushort? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state/brightness";
+            string address = createUrl(ip, port, auth_token, "state/brightness");
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -495,10 +479,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> SetStateBrightness(string ip, string port, string auth_token, ushort value, ushort duration = 0)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state";
+            string address = createUrl(ip, port, auth_token, "state");
             string? contentString = null;
             if (duration == 0)
                 contentString = "{\"brightness\": {\"value\": " + value + "}}";
@@ -513,10 +495,6 @@ namespace NanoleafAPI
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetStateBrightness)} response: successfull");
             }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
-            }
             catch (Exception e)
             {
                 _logger?.LogWarning(e, string.Empty);
@@ -525,10 +503,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> SetStateBrightnessIncrement(string ip, string port, string auth_token, short value)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state";
+            string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"brightness\": {\"increment\": " + value + "}}";
             try
             {
@@ -538,10 +514,6 @@ namespace NanoleafAPI
 
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetStateBrightnessIncrement)} response: successfull");
-            }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
             }
             catch (Exception e)
             {
@@ -553,10 +525,8 @@ namespace NanoleafAPI
         #region Hue
         public static async Task<ushort?> GetStateHue(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             ushort? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state/hue";
+            string address = createUrl(ip, port, auth_token, "state/hue");
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -588,10 +558,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> SetStateHue(string ip, string port, string auth_token, ushort value)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state";
+            string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"hue\" : {\"value\": " + value + "}}";
             try
             {
@@ -602,10 +570,6 @@ namespace NanoleafAPI
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetStateHue)} response: successfull");
             }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
-            }
             catch (Exception e)
             {
                 _logger?.LogWarning(e, string.Empty);
@@ -614,10 +578,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> SetStateHueIncrement(string ip, string port, string auth_token, short value)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state";
+            string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"hue\": {\"increment\": " + value + "}}";
             try
             {
@@ -627,10 +589,6 @@ namespace NanoleafAPI
 
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetStateHueIncrement)} response: successfull");
-            }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
             }
             catch (Exception e)
             {
@@ -642,10 +600,8 @@ namespace NanoleafAPI
         #region Saturation
         public static async Task<ushort?> GetStateSaturation(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             ushort? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state/sat";
+            string address = createUrl(ip, port, auth_token, "state/sat");
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -677,10 +633,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> SetStateSaturation(string ip, string port, string auth_token, ushort value)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state";
+            string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"sat\" : {\"value\": " + value + "}}";
             try
             {
@@ -691,10 +645,6 @@ namespace NanoleafAPI
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetStateSaturation)} response: successfull");
             }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
-            }
             catch (Exception e)
             {
                 _logger?.LogWarning(e, string.Empty);
@@ -703,10 +653,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> SetStateSaturationIncrement(string ip, string port, string auth_token, short value)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state";
+            string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"sat\": {\"increment\": " + value + "}}";
             try
             {
@@ -716,10 +664,6 @@ namespace NanoleafAPI
 
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetStateSaturationIncrement)} response: successfull");
-            }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
             }
             catch (Exception e)
             {
@@ -731,10 +675,8 @@ namespace NanoleafAPI
         #region ColorTemperature
         public static async Task<ushort?> GetStateColorTemperature(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             ushort? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state/ct";
+            string address = createUrl(ip, port, auth_token, "state/ct");
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -766,10 +708,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> SetStateColorTemperature(string ip, string port, string auth_token, ushort value)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state";
+            string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"ct\" : {\"value\": " + value + "}}";
             try
             {
@@ -780,10 +720,6 @@ namespace NanoleafAPI
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetStateColorTemperature)} response: successfull");
             }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
-            }
             catch (Exception e)
             {
                 _logger?.LogWarning(e, string.Empty);
@@ -792,10 +728,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> SetStateColorTemperatureIncrement(string ip, string port, string auth_token, short value)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state";
+            string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"ct\": {\"increment\": " + value + "}}";
             try
             {
@@ -805,10 +739,6 @@ namespace NanoleafAPI
 
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetStateColorTemperatureIncrement)} response: successfull");
-            }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
             }
             catch (Exception e)
             {
@@ -820,10 +750,8 @@ namespace NanoleafAPI
         #region ColorMode
         public static async Task<string?> GetColorMode(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             string? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state/colorMode";
+            string address = createUrl(ip, port, auth_token, "state/colorMode");
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -856,7 +784,7 @@ namespace NanoleafAPI
         public static async Task<bool?> SetColorMode(string ip, string port, string auth_token, string value)
         {
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/state/colorMode";
+            string address = createUrl(ip, port, auth_token, "state/colorMode");
             string contentString = "{" + $"\"select\": \"{value}\"" + "}";
 
             try
@@ -867,10 +795,6 @@ namespace NanoleafAPI
 
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetStateColorTemperatureIncrement)} response: successfull");
-            }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
             }
             catch (Exception e)
             {
@@ -884,10 +808,8 @@ namespace NanoleafAPI
         #region Effects
         public static async Task<string?> GetSelectedEffect(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             string? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/effects/select";
+            string address = createUrl(ip, port, auth_token, "effects/select");
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -919,10 +841,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> SetSelectedEffect(string ip, string port, string auth_token, string value)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/effects";
+            string address = createUrl(ip, port, auth_token, "effects");
             string contentString = "{" + $"\"select\": \"{value}\"" + "}";
             try
             {
@@ -933,10 +853,6 @@ namespace NanoleafAPI
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetSelectedEffect)} response: successfull");
             }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
-            }
             catch (Exception e)
             {
                 _logger?.LogWarning(e, string.Empty);
@@ -945,9 +861,7 @@ namespace NanoleafAPI
         }
         public static async Task<string[]?> GetEffectList(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/effects/effectsList";
+            string address = createUrl(ip, port, auth_token, "effects/effectsList");
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -984,10 +898,8 @@ namespace NanoleafAPI
         #region PanelLayout
         public static async Task<ushort?> GetPanelLayoutGlobalOrientation(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             ushort? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/panelLayout/globalOrientation";
+            string address = createUrl(ip, port, auth_token, "panelLayout/globalOrientation");
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -1019,10 +931,8 @@ namespace NanoleafAPI
         }
         public static async Task<bool?> SetPanelLayoutGlobalOrientation(string ip, string port, string auth_token, ushort value)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = false;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/panelLayout";
+            string address = createUrl(ip, port, auth_token, "panelLayout");
             string contentString = "{\"globalOrientation\" : {\"value\": " + value + "}}";
             try
             {
@@ -1033,10 +943,6 @@ namespace NanoleafAPI
                 if (result == true)
                     _logger?.LogDebug($"Received {nameof(SetPanelLayoutGlobalOrientation)} response: successfull");
             }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
-            }
             catch (Exception e)
             {
                 _logger?.LogWarning(e, string.Empty);
@@ -1045,10 +951,8 @@ namespace NanoleafAPI
         }
         public static async Task<Layout?> GetPanelLayoutLayout(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             Layout? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/panelLayout/layout";
+            string address = createUrl(ip, port, auth_token, "panelLayout/layout");
             using (HttpClient hc = new HttpClient())
             {
                 try
@@ -1083,10 +987,8 @@ namespace NanoleafAPI
 
         public static async Task<bool?> Identify(string ip, string port, string auth_token)
         {
-            validateCredentials(ip, port, auth_token);
-
             bool? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/identify";
+            string address = createUrl(ip, port, auth_token, "identify");
             try
             {
                 _logger?.LogDebug($"Request {nameof(Identify)} for \"{ip}\"");
@@ -1111,46 +1013,45 @@ namespace NanoleafAPI
         #region External Control (Streaming)
         public static async Task<ExternalControlConnectionInfo?> SetExternalControlStreaming(string ip, string port, string auth_token, EDeviceType deviceType)
         {
-            validateCredentials(ip, port, auth_token);
-
             ExternalControlConnectionInfo? result = null;
-            string address = $"http://{ip}:{port}/api/v1/{auth_token}/effects";
+            string address = createUrl(ip, port,auth_token,"effects");
             string contentString = "{\"write\": {\"command\": \"display\", \"animType\": \"extControl\", \"extControlVersion\": \"v2\"}}";
             try
             {
                 _logger?.LogDebug($"Request {nameof(SetExternalControlStreaming)} for \"{ip}\"");
                 var response = await put(address, contentString);
 
-                if (response?.StatusCode == HttpStatusCode.OK || response?.StatusCode == HttpStatusCode.NoContent)
+                switch (deviceType)
                 {
-                    switch (deviceType)
-                    {
-                        case EDeviceType.LightPanles:
+                    case EDeviceType.LightPanles:
+                        if (response?.StatusCode == HttpStatusCode.OK)
+                        {
                             if (!string.IsNullOrWhiteSpace(response.Content))
                                 result = JsonConvert.DeserializeObject<ExternalControlConnectionInfo>(response.Content);
-                            break;
+                        }
+                        else
+                            _logger?.LogDebug($"Received Response for {nameof(SetExternalControlStreaming)}: {response}");
+                        break;
 
-                        case EDeviceType.Shapes:
-                        case EDeviceType.Canvas:
-                        case EDeviceType.Elements:
-                        case EDeviceType.Lines:
-                        case EDeviceType.Essentials:
-                        default:
+                    case EDeviceType.Shapes:
+                    case EDeviceType.Canvas:
+                    case EDeviceType.Elements:
+                    case EDeviceType.Lines:
+                    case EDeviceType.Essentials:
+                    default:
+                        if (response?.StatusCode == HttpStatusCode.NoContent)
+                        {
                             result = new ExternalControlConnectionInfo() { StreamIPAddress = ip, StreamPort = 60222, StreamProtocol = "udp" };
-                            break;
-                    }
-
-                    if (result != null)
-                        _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)}: {result}");
-                    else
-                        _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)} response can't be Deserialized: {response.Content}");
+                        }
+                        else
+                            _logger?.LogDebug($"Received Response for {nameof(SetExternalControlStreaming)}: {response}");
+                        break;
                 }
+
+                if (result != null)
+                    _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)}: {result}");
                 else
-                    _logger?.LogDebug($"Received Response for {nameof(SetExternalControlStreaming)}: {response}");
-            }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
+                    _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)} response can't be Deserialized: {response.Content}");
             }
             catch (Exception e)
             {
@@ -1222,7 +1123,24 @@ namespace NanoleafAPI
             }
         }
         #endregion
+        private static string createUrl(string ip, string port, string auth_token,string path)
+        {
+            validateCredentials(ip, port, auth_token);
 
+            if (path== null) //If the Path is Empty, its correct!!!
+                throw new ArgumentException($"Property {nameof(path)} isn't Valid: {path}");
+
+            return $"http://{ip}:{port}/api/v1/{auth_token}/{path}";
+        }
+        private static string createUrl(string ip, string port, string path)
+        {
+            validateCredentials(ip, port);
+
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException($"Property {nameof(path)} isn't Valid: {path}");
+
+            return $"http://{ip}:{port}/api/v1/{path}";
+        }
         private static void validateCredentials(string ip, string port, string auth_token)
         {
             validateCredentials(ip, port);
@@ -1375,7 +1293,9 @@ namespace NanoleafAPI
             eventListenerThread = new Thread(new ParameterizedThreadStart(async (o) =>
             {
                 string address = $"http://{ip}:{port}/api/v1/{auth_token}/events?id=1,2,3,4";
+#pragma warning disable SYSLIB0014
                 WebClient wc = new WebClient();
+#pragma warning restore SYSLIB0014
                 wc.Headers.Add("TouchEventsPort", _touchEventsPort.ToString());
                 wc.OpenReadAsync(new Uri(address));
                 bool isListening = true;

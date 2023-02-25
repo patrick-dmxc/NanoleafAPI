@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Primitives;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Text.RegularExpressions;
 
 namespace NanoleafAPI
 {
@@ -70,6 +71,8 @@ namespace NanoleafAPI
             if (string.IsNullOrWhiteSpace(token))
                 return false;
             if (token.Length != 32)
+                return false;
+            if (!token.All(Char.IsLetterOrDigit))
                 return false;
 
             return true;

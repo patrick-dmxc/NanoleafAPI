@@ -11,11 +11,9 @@ namespace NanoleafAPI_Tests
         [SetUp]
         public void Setup()
         {
-            //Communication.RegisterIPAddress(new IPAddress(new byte[] { 192, 168, 1, 13 }));
-            //Communication.RegisterIPAddress(new IPAddress(new byte[] { 192, 168, 10, 254 }));
-            //Communication.RegisterIPAddress(IPAddress.Loopback);
+            Tools.LoggerFactory = new TestLoggerFactory();
+
             Communication.RegisterIPAddress(IPAddress.Any);
-            //Communication.RegisterIPAddress(new IPAddress(new byte[] { 192, 168, 10, 76 }));
         }
 
         [Test]
