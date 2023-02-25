@@ -9,7 +9,7 @@ namespace NanoleafAPI
 {
     public class Controller : IDisposable
     {
-        private readonly ILogger<Controller> _logger;
+        private readonly ILogger<Controller>? _logger;
         public string IP { get; private set; }
         public string Port { get; private set; }
 
@@ -193,7 +193,7 @@ namespace NanoleafAPI
 
         public Controller(JToken json)
         {
-            _logger = Tools.LoggerFactory?.CreateLogger<Controller>();
+            _logger = Tools.LoggerFactory.CreateLogger<Controller>();
             IP = (string)json[nameof(IP)];
             Port = (string)json[nameof(Port)];
             Auth_token = (string)json[nameof(Auth_token)];
@@ -247,7 +247,7 @@ namespace NanoleafAPI
         }
         public Controller(string ip, string port, string auth_token = null)
         {
-            _logger = Tools.LoggerFactory?.CreateLogger<Controller>();
+            _logger = Tools.LoggerFactory.CreateLogger<Controller>();
             IP = ip;
             Port = port;
             Auth_token = auth_token;

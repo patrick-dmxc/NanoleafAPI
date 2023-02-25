@@ -22,9 +22,15 @@ namespace NanoleafAPI
             return $"PanelID: {PanelID} Gesture: {Gesture}";
         }
     }
+
     public class GestureEvents
     {
         [JsonProperty("events")]
         public IEnumerable<GestureEvent> Events { get; set; }
+
+        public GestureEvents(IEnumerable<GestureEvent> events)
+        {
+            Events = events;
+        }
     }
 }

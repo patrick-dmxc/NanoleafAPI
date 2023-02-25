@@ -5,10 +5,10 @@ namespace NanoleafAPI
     public static class Tools
     {
         public static ILoggerFactory LoggerFactory = new LoggerFactory();
-        public static EDeviceType ModelStringToEnum(string val)
+        public static EDeviceType ModelStringToEnum(string? val)
         {
             EDeviceType type = EDeviceType.UNKNOWN;
-            switch (val.ToLower())
+            switch (val?.ToLower())
             {
                 case "nl22":
                 case "light":

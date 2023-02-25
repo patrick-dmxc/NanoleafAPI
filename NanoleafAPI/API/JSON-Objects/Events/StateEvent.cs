@@ -7,7 +7,7 @@ namespace NanoleafAPI
         [JsonProperty("attr")]
         public EAttribute Attribute { get; set; }
         [JsonProperty("value")]
-        public object Value { get; set; }
+        public object? Value { get; set; }
         public enum EAttribute
         {
             UNKNOWN,
@@ -23,9 +23,15 @@ namespace NanoleafAPI
             return $"State: {Attribute}: {Value}";
         }
     }
+
     public class StateEvents
     {
         [JsonProperty("events")]
         public IEnumerable<StateEvent> Events { get; set; }
+
+        public StateEvents(IEnumerable<StateEvent> events)
+        {
+            Events = events;
+        }
     }
 }

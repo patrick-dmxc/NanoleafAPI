@@ -10,7 +10,7 @@ namespace NanoleafAPI
         private static readonly ILogger log = Tools.LoggerFactory.CreateLogger(typeof(EventTools));
 
         [DebuggerHidden]
-        public static int InvokeFailSafe(this EventHandler @event, object sender, EventArgs args, ILogger log = null)
+        public static int InvokeFailSafe(this EventHandler @event, object sender, EventArgs args, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(sender, args), log);
         }
@@ -25,7 +25,7 @@ namespace NanoleafAPI
         /// <param name="log"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static int InvokeFailSafe(this Action @event, ILogger log = null)
+        public static int InvokeFailSafe(this Action @event, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(), log);
         }
@@ -40,7 +40,7 @@ namespace NanoleafAPI
         /// <param name="log"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static int InvokeFailSafe<T>(this Action<T> @event, T args, ILogger log = null)
+        public static int InvokeFailSafe<T>(this Action<T> @event, T args, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(args), log);
         }
@@ -56,7 +56,7 @@ namespace NanoleafAPI
         /// <param name="log"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static int InvokeFailSafe<T>(this EventHandler<T> @event, object sender, T args, ILogger log = null)
+        public static int InvokeFailSafe<T>(this EventHandler<T> @event, object sender, T args, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(sender, args), log);
         }
@@ -70,7 +70,7 @@ namespace NanoleafAPI
         /// <param name="args"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static int InvokeFailSafe(this PropertyChangedEventHandler @event, object sender, PropertyChangedEventArgs args, ILogger log = null)
+        public static int InvokeFailSafe(this PropertyChangedEventHandler @event, object sender, PropertyChangedEventArgs args, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(sender, args), log);
         }
@@ -84,7 +84,7 @@ namespace NanoleafAPI
         /// <param name="args"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static int InvokeFailSafe(this CollectionChangeEventHandler @event, object sender, CollectionChangeEventArgs args, ILogger log = null)
+        public static int InvokeFailSafe(this CollectionChangeEventHandler @event, object sender, CollectionChangeEventArgs args, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(sender, args), log);
         }
@@ -98,7 +98,7 @@ namespace NanoleafAPI
         /// <param name="args"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static int InvokeFailSafe(this NotifyCollectionChangedEventHandler @event, object sender, NotifyCollectionChangedEventArgs args, ILogger log = null)
+        public static int InvokeFailSafe(this NotifyCollectionChangedEventHandler @event, object sender, NotifyCollectionChangedEventArgs args, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(sender, args), log);
         }
@@ -125,13 +125,13 @@ namespace NanoleafAPI
         /// <param name="values"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static IReadOnlyList<object> InvokeFailSafe(this Delegate @delegate, ILogger elog = null, params object[] values)
+        public static IReadOnlyList<object>? InvokeFailSafe(this Delegate @delegate, ILogger? elog = null, params object[] values)
         {
             return InvokeFailSaveGeneric(@delegate, a => a.DynamicInvoke(values), elog);
         }
 
         [DebuggerHidden]
-        public static int InvokeFailSaveGeneric<TDelegate>(TDelegate @delegate, Action<TDelegate> invoker, ILogger elog = null) where TDelegate : Delegate
+        public static int InvokeFailSaveGeneric<TDelegate>(TDelegate @delegate, Action<TDelegate> invoker, ILogger? elog = null) where TDelegate : Delegate
         {
             if (invoker == null) throw new ArgumentNullException(nameof(invoker));
             if (@delegate == null) return 0;
@@ -157,7 +157,7 @@ namespace NanoleafAPI
         }
 
         [DebuggerHidden]
-        public static IReadOnlyList<TReturn> InvokeFailSaveGeneric<TDelegate, TReturn>(TDelegate @delegate, Func<TDelegate, TReturn> invoker, ILogger elog = null) where TDelegate : Delegate
+        public static IReadOnlyList<TReturn>? InvokeFailSaveGeneric<TDelegate, TReturn>(TDelegate @delegate, Func<TDelegate, TReturn?> invoker, ILogger? elog = null) where TDelegate : Delegate
         {
             if (invoker == null) throw new ArgumentNullException(nameof(invoker));
             if (@delegate == null) return null;

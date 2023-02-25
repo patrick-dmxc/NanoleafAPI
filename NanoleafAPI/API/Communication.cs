@@ -16,13 +16,13 @@ namespace NanoleafAPI
 {
     public class Communication
     {
-        private static ILogger __logger;
-        private static ILogger _logger
+        private static ILogger? __logger = null;
+        private static ILogger? _logger
         {
             get
             {
                 if (__logger == null)
-                    __logger = Tools.LoggerFactory?.CreateLogger(nameof(Communication));
+                    __logger = Tools.LoggerFactory.CreateLogger(nameof(Communication));
                 return __logger;
             }
         }
@@ -1056,19 +1056,19 @@ namespace NanoleafAPI
             switch (id)
             {
                 case 1:
-                    StateEvents stateEvents = JsonConvert.DeserializeObject<StateEvents>(eventData);
+                    StateEvents? stateEvents = JsonConvert.DeserializeObject<StateEvents>(eventData);
                     StaticOnStateEvent?.InvokeFailSafe(null, new StateEventArgs(ip, stateEvents));
                     break;
                 case 2:
-                    LayoutEvent layoutEvent = JsonConvert.DeserializeObject<LayoutEvent>(eventData, LayoutEventConverter.Instance);
+                    LayoutEvent? layoutEvent = JsonConvert.DeserializeObject<LayoutEvent>(eventData, LayoutEventConverter.Instance);
                     StaticOnLayoutEvent?.InvokeFailSafe(null, new LayoutEventArgs(ip, layoutEvent));
                     break;
                 case 3:
-                    EffectEvents effectEvent = JsonConvert.DeserializeObject<EffectEvents>(eventData);
+                    EffectEvents? effectEvent = JsonConvert.DeserializeObject<EffectEvents>(eventData);
                     StaticOnEffectEvent?.InvokeFailSafe(null, new EffectEventArgs(ip, effectEvent));
                     break;
                 case 4:
-                    GestureEvents gestureEvents = JsonConvert.DeserializeObject<GestureEvents>(eventData);
+                    GestureEvents? gestureEvents = JsonConvert.DeserializeObject<GestureEvents>(eventData);
                     StaticOnGestureEvent?.InvokeFailSafe(null, new GestureEventArgs(ip, gestureEvents));
                     break;
             }
