@@ -35,10 +35,10 @@ namespace NanoleafAPI_Tests
                 else
                     await Task.Delay(1);
             }
-            Assert.IsTrue(eventFired);
-            Assert.AreEqual(EDeviceType.Canvas, Communication.DiscoveredDevices.First().DeviceTyp);
-            Assert.AreEqual("Canvas C097", Communication.DiscoveredDevices.First().Name);
-            Assert.AreEqual(IP, Communication.DiscoveredDevices.First().IP);
+            Assert.That(eventFired, Is.True);
+            Assert.That(Communication.DiscoveredDevices.First().DeviceTyp, Is.EqualTo(EDeviceType.Canvas));
+            Assert.That(Communication.DiscoveredDevices.First().Name, Is.EqualTo("Canvas C097"));
+            Assert.That(Communication.DiscoveredDevices.First().IP, Is.EqualTo(IP));
 
             Communication.StopDiscoverySSDPTask();
         }
@@ -59,10 +59,10 @@ namespace NanoleafAPI_Tests
                 else
                     await Task.Delay(1);
             }
-            Assert.IsTrue(eventFired);
-            Assert.AreEqual(EDeviceType.Canvas, Communication.DiscoveredDevices.First().DeviceTyp);
-            Assert.AreEqual("Canvas C097", Communication.DiscoveredDevices.First().Name);
-            Assert.AreEqual(IP, Communication.DiscoveredDevices.First().IP);
+            Assert.That(eventFired, Is.True);
+            Assert.That(Communication.DiscoveredDevices.First().DeviceTyp, Is.EqualTo(EDeviceType.Canvas));
+            Assert.That(Communication.DiscoveredDevices.First().Name, Is.EqualTo("Canvas C097"));
+            Assert.That(Communication.DiscoveredDevices.First().IP, Is.EqualTo(IP));
 
             Communication.StopDiscoverymDNSTask();
         }
