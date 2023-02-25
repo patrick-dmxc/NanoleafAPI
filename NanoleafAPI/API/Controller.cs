@@ -241,7 +241,7 @@ namespace NanoleafAPI
                 await RequestToken();
             }
             _ = this.runController();
-            _ = this.streamController();
+            this.streamController();
         }
 
         public async Task RequestToken(int tryes = 20)
@@ -472,7 +472,7 @@ namespace NanoleafAPI
             PanelLayoutChanged?.InvokeFailSafe(null, EventArgs.Empty);
         }
 
-        private async Task streamController()
+        private void streamController()
         {
             streamThread = new Thread(async () =>
             {
@@ -555,7 +555,7 @@ namespace NanoleafAPI
         }
 
 
-        public async Task<bool> SetPanelColor(int panelID, RGBW color)
+        public bool SetPanelColor(int panelID, RGBW color)
         {
             try
             {

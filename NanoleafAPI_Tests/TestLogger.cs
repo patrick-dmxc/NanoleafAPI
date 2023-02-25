@@ -37,10 +37,12 @@ namespace NanoleafAPI_Tests
             return true;
         }
 
+#pragma warning disable CS8767 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
             Console.WriteLine(formatter.Invoke(state, exception));
             System.Diagnostics.Debug.WriteLine(formatter.Invoke(state, exception));
         }
+#pragma warning restore CS8767
     }
 }

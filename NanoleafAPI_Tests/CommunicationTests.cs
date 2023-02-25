@@ -57,6 +57,7 @@ namespace NanoleafAPI_Tests
         {
             await Task.Delay(500);
             var info = await Communication.GetAllPanelInfo(IP, PORT, AUTH_TOKEN);
+            Assert.That(info, Is.Not.Null);
             Assert.Multiple(() =>
             {
                 Assert.That(info.SerialNumber, Is.EqualTo("S19124C8036"));
@@ -79,9 +80,10 @@ namespace NanoleafAPI_Tests
         {
             await Task.Delay(500);
             var info = await Communication.GetPanelLayoutLayout(IP, PORT, AUTH_TOKEN);
+            Assert.That(info, Is.Not.Null);
 
             var externalControlInfo = await Communication.SetExternalControlStreaming(IP, PORT, AUTH_TOKEN, EDeviceType.Canvas);
-           // Assert.That(externalControlInfo, Is.Not.Null);
+            Assert.That(externalControlInfo, Is.Not.Null);
 
             List<Panel> panels = new List<Panel>();
             var ids = info.PanelPositions.Select(p => p.PanelId);
@@ -99,7 +101,7 @@ namespace NanoleafAPI_Tests
                 panels.ForEach(p => p.StreamingColor = rgbw);
                 var data1 = Communication.CreateStreamingData(panels);
                 Assert.That(data1, Is.Not.Null);
-                await Communication.SendUDPCommand(externalControlInfo, data1);
+                await Communication.SendUDPCommand(externalControlInfo!, data1);
                 if (val % 2 == 0)
                     await Task.Delay(1);
                 val++;
@@ -113,7 +115,7 @@ namespace NanoleafAPI_Tests
                 controlPanel.ForEach(p => p.StreamingColor = rgbw);
                 var data2 = Communication.CreateStreamingData(controlPanel);
                 Assert.That(data2, Is.Not.Null);
-                await Communication.SendUDPCommand(externalControlInfo, data2);
+                await Communication.SendUDPCommand(externalControlInfo!, data2);
                 if (val % 2 == 0)
                     await Task.Delay(1);
                 val++;

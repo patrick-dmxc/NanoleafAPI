@@ -302,7 +302,7 @@ namespace NanoleafAPI
                 {
                     StringContent queryString = new StringContent("");
                     _logger?.LogDebug($"Request {nameof(Ping)} for \"{ip}\"");
-                    var response = hc.PostAsync(address, queryString).GetAwaiter().GetResult();
+                    var response = await hc.PostAsync(address, queryString);
 
                     _logger?.LogDebug($"Received Response for {nameof(Ping)}: {response.StatusCode}");
                     return true;
@@ -331,7 +331,7 @@ namespace NanoleafAPI
                 {
                     StringContent queryString = new StringContent("");
                     _logger?.LogDebug($"Request {nameof(AddUser)} for \"{ip}\"");
-                    var response = hc.PostAsync(address, queryString).GetAwaiter().GetResult();
+                    var response = await hc.PostAsync(address, queryString);
 
                     if (response.StatusCode == HttpStatusCode.OK)
                     {
@@ -1085,7 +1085,7 @@ namespace NanoleafAPI
                 if (result != null)
                     _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)}: {result}");
                 else
-                    _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)} response can't be Deserialized: {response.Content}");
+                    _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)} response can't be Deserialized: {response?.Content}");
             }
             catch (Exception e)
             {

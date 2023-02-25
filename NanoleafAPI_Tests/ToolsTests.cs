@@ -41,7 +41,7 @@ namespace NanoleafAPI_Tests
 
 
         [Test]
-        public async Task TestTokenValidation()
+        public void TestTokenValidation()
         {
             foreach(var token in validTokens)
             {

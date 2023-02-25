@@ -34,7 +34,7 @@ namespace NanoleafTest
             Communication.StaticOnStateEvent += Communication_StaticOnStateEvent;
             controller = new Controller(ip, port, AUTH_TOKEN);
             bool alive = true;
-            Thread taskStream = new Thread(async () =>
+            Thread taskStream = new Thread(() =>
             {
                 byte val = 0;
                 while (alive)
