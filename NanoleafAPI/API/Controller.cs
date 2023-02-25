@@ -295,7 +295,7 @@ namespace NanoleafAPI
                     {
                         var allPanelInfo = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
                         if (allPanelInfo != null)
-                            await UpdateInfos(allPanelInfo);
+                            updateInfos(allPanelInfo);
                         else
                         {
                             _logger?.LogDebug($"{nameof(Communication.GetAllPanelInfo)} returned null!");
@@ -330,8 +330,8 @@ namespace NanoleafAPI
                 if (infos == null)
                     return;
 
-                await BackupSettings(infos);
-                await UpdateInfos(infos);
+                backupSettings(infos);
+                updateInfos(infos);
                 Communication.StartEventListener(IP, Port, Auth_token);
             }
             catch (Exception e)
@@ -344,6 +344,12 @@ namespace NanoleafAPI
             _logger?.LogInformation($"Starting Stream");
             if (Tools.IsTokenValid(Auth_token))
             {
+                var infos = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
+                if (infos != null)
+                {
+                    backupSettings(infos);
+                    updateInfos(infos);
+                }
 
                 var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
                 if (eci != null)
@@ -372,7 +378,7 @@ namespace NanoleafAPI
                 _logger?.LogInformation($"{nameof(Auth_token)} is invalid");
         }
 
-        private async Task UpdateInfos(AllPanelInfo allPanelInfo)
+        private void updateInfos(AllPanelInfo allPanelInfo)
         {
             if (allPanelInfo == null)
             {
@@ -419,7 +425,7 @@ namespace NanoleafAPI
             UpdatePanelLayout(allPanelInfo.PanelLayout.Layout);
         }
 
-        private async Task BackupSettings(AllPanelInfo allPanelInfo)
+        private void backupSettings(AllPanelInfo allPanelInfo)
         {
             //Backup current state to restore it on shutdown
             GlobalOrientationStored = allPanelInfo.PanelLayout.GlobalOrientation.Value;
@@ -567,17 +573,17 @@ namespace NanoleafAPI
             return false;
         }
 
-        public void SelfDestruction(bool deleteUser = false)
+        public async Task SelfDestruction(bool deleteUser = false)
         {
             Dispose();
-            RestoreParameters();
+            await restoreParameters();
             if (deleteUser && Tools.IsTokenValid(Auth_token))
                 Communication.DeleteUser(IP, Port, Auth_token).GetAwaiter().GetResult();
 
             _logger?.LogInformation(string.Format("Destruct {0}", this));
         }
 
-        public async void RestoreParameters()
+        private async Task restoreParameters()
         {
             if (!Tools.IsTokenValid(Auth_token))
                 return;

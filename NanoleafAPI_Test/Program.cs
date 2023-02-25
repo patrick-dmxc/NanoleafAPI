@@ -52,7 +52,7 @@ namespace NanoleafTest
 
 
             Console.ReadLine();
-            controller.SelfDestruction(true);
+            _ = controller.SelfDestruction(true);
             _logger?.LogInformation("User Deleted");
             alive = false;
 
