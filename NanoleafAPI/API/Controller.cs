@@ -279,7 +279,7 @@ namespace NanoleafAPI
 
         private async Task runController()
         {
-            _logger?.LogDebug("Run Controller");
+            _logger?.LogDebug($"Run Controller ({IP})");
             while (!isDisposed && !Tools.IsTokenValid(Auth_token))
                 await Task.Delay(1000);
 
@@ -341,7 +341,7 @@ namespace NanoleafAPI
         }
         public async Task StartStreaming()
         {
-            _logger?.LogInformation($"Starting Stream");
+            _logger?.LogInformation($"Starting Stream to {IP}");
             if (Tools.IsTokenValid(Auth_token))
             {
                 var infos = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
@@ -357,14 +357,14 @@ namespace NanoleafAPI
                 else
                     _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
 
-                _logger?.LogInformation($"Started Stream");
+                _logger?.LogInformation($"Started Stream to {IP}");
             }
             else
-                _logger?.LogInformation($"{nameof(Auth_token)} is invalid");
+                _logger?.LogInformation($"{nameof(Auth_token)} for {IP} is invalid");
         }
         public async Task StopStreaming(string? effect = null)
         {
-            _logger?.LogInformation($"Stopping Stream");
+            _logger?.LogInformation($"Stopping Stream to {IP}");
             externalControlInfo = null;
             if (Tools.IsTokenValid(Auth_token))
             {
@@ -372,10 +372,10 @@ namespace NanoleafAPI
                     effect = SelectedEffectStored;
 
                 await Communication.SetSelectedEffect(IP, Port, Auth_token, effect);
-                _logger?.LogInformation($"Stopped Stream");
+                _logger?.LogInformation($"Stopped Stream to {IP}");
             }
             else
-                _logger?.LogInformation($"{nameof(Auth_token)} is invalid");
+                _logger?.LogInformation($"{nameof(Auth_token)} for {IP} is invalid");
         }
 
         private void updateInfos(AllPanelInfo allPanelInfo)
