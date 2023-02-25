@@ -1324,6 +1324,9 @@ namespace NanoleafAPI
 
         public static void StartEventListener(string ip, string port, string auth_token)
         {
+            if (eventListenerThread != null)
+                return;
+
             eventListenerThread = new Thread(new ParameterizedThreadStart(async (o) =>
             {
                 string address = $"http://{ip}:{port}/api/v1/{auth_token}/events?id=1,2,3,4";
@@ -1378,6 +1381,7 @@ namespace NanoleafAPI
                 while (isListening)
                     await Task.Delay(10);
 
+                eventListenerThread = null;
                 if (restart)
                     StartEventListener(ip, port, auth_token);
             }));

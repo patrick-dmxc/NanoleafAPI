@@ -73,8 +73,12 @@ namespace NanoleafAPI
                 this.reachable = value;
                 _logger?.LogInformation($"{this} is reachable.");
                 _ = this.establishConnection();
+                if (externalControlInfo != null && value)
+                    _ = RestartStreaming();
+                ReachableChanged?.InvokeFailSafe(this, EventArgs.Empty);
             }
         }
+        public event EventHandler? ReachableChanged;
 
         public bool StreamingStarted
         {
@@ -300,7 +304,8 @@ namespace NanoleafAPI
                         {
                             _logger?.LogDebug($"{nameof(Communication.GetAllPanelInfo)} returned null!");
                             _logger?.LogDebug($"Checking Connection to {IP}");
-                            if (await Communication.Ping(IP, Port))
+                            Reachable = await Communication.Ping(IP, Port);
+                            if (Reachable)
                             {
                                 _logger?.LogDebug($"Reset Auth_Token for {IP}");
                                 Auth_token = null;
@@ -361,6 +366,14 @@ namespace NanoleafAPI
             }
             else
                 _logger?.LogInformation($"{nameof(Auth_token)} for {IP} is invalid");
+        }
+        public async Task RestartStreaming()
+        {
+            var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
+            if (eci != null)
+                externalControlInfo = eci;
+            else
+                _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
         }
         public async Task StopStreaming()
         {
