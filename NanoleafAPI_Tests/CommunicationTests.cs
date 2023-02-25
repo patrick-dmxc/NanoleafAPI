@@ -29,9 +29,9 @@ namespace NanoleafAPI_Tests
         {
             await Task.Delay(500);
             var info = await Communication.GetAllPanelInfo(IP, PORT, AUTH_TOKEN);
-            Assert.That(info.SerialNumber, Is.EqualTo("S19124C8036"));
             Assert.Multiple(() =>
             {
+                Assert.That(info.SerialNumber, Is.EqualTo("S19124C8036"));
                 Assert.That(info.Model, Is.EqualTo("NL29"));
                 Assert.That(info.Name, Is.EqualTo("Canvas C097"));
                 Assert.That(info.HardwareVersion, Is.EqualTo("2.0-4"));
