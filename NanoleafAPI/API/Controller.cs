@@ -13,7 +13,7 @@ namespace NanoleafAPI
         public string IP { get; private set; }
         public string Port { get; private set; }
 
-        public string Auth_token { get; private set; } = null;
+        public string? Auth_token { get; private set; } = null;
         private bool isDisposed = false;
         private Ping ping = new Ping();
 
@@ -34,6 +34,9 @@ namespace NanoleafAPI
             get { return globalOrientation; }
             private set
             {
+                if (!Tools.IsTokenValid(Auth_token))
+                    return;
+
                 _ = Communication.SetPanelLayoutGlobalOrientation(IP, Port, Auth_token, value);
             }
         }
@@ -70,15 +73,21 @@ namespace NanoleafAPI
                     return;
                 this.reachable = value;
                 _logger?.LogInformation($"{this} is reachable.");
-                this.establishConnection();
+                _ = this.establishConnection();
             }
         }
         public void SetPowerOn()
         {
+            if (!Tools.IsTokenValid(Auth_token))
+                return;
+
             _ = Communication.SetStateOnOff(IP, Port, Auth_token, true);
         }
         public void SetPowerOff()
         {
+            if (!Tools.IsTokenValid(Auth_token))
+                return;
+
             _ = Communication.SetStateOnOff(IP, Port, Auth_token, false);
         }
 
@@ -89,6 +98,9 @@ namespace NanoleafAPI
             get { return brightness; }
             set
             {
+                if (!Tools.IsTokenValid(Auth_token))
+                    return;
+
                 _ = Communication.SetStateBrightness(IP, Port, Auth_token, value);
             }
         }
@@ -109,6 +121,9 @@ namespace NanoleafAPI
             get { return hue; }
             set
             {
+                if (!Tools.IsTokenValid(Auth_token))
+                    return;
+
                 _ = Communication.SetStateHue(IP, Port, Auth_token, value);
             }
         }
@@ -129,6 +144,9 @@ namespace NanoleafAPI
             get { return saturation; }
             set
             {
+                if (!Tools.IsTokenValid(Auth_token))
+                    return;
+
                 _ = Communication.SetStateSaturation(IP, Port, Auth_token, value);
             }
         }
@@ -149,6 +167,9 @@ namespace NanoleafAPI
             get { return colorTemprature; }
             set
             {
+                if (!Tools.IsTokenValid(Auth_token))
+                    return;
+
                 _ = Communication.SetStateColorTemperature(IP, Port, Auth_token, value);
             }
         }
@@ -179,7 +200,7 @@ namespace NanoleafAPI
         public event EventHandler UpdatedInfos;
 
         private ExternalControlConnectionInfo externalControlInfo;
-        private Thread streamThread;
+        private Thread? streamThread;
 
         private double refreshRate = 44;
         public double RefreshRate
@@ -191,9 +212,14 @@ namespace NanoleafAPI
             }
         }
 
+#pragma warning disable CS8618
         public Controller(JToken json)
         {
             _logger = Tools.LoggerFactory.CreateLogger<Controller>();
+#pragma warning disable CS8600
+#pragma warning disable CS8601
+#pragma warning disable CS8604
+
             IP = (string)json[nameof(IP)];
             Port = (string)json[nameof(Port)];
             Auth_token = (string)json[nameof(Auth_token)];
@@ -231,21 +257,30 @@ namespace NanoleafAPI
 
             //Backup current state to restore it on shutdown
             GlobalOrientationStored = globalOrientation;
+            if (string.IsNullOrWhiteSpace(SelectedEffect))
+                throw new NullReferenceException($"{nameof(SelectedEffect)} is null!");
             SelectedEffectStored = SelectedEffect;
             PowerOnStored = PowerOn;
             BrightnessStored = brightness;
             HueStored = hue;
             SaturationStored = saturation;
             ColorTempratureStored = colorTemprature;
+            if (string.IsNullOrWhiteSpace(ColorMode))
+                throw new NullReferenceException($"{nameof(ColorMode)} is null!");
             ColorModeStored = ColorMode;
 
             var panels = json[nameof(Panels)];
-            foreach (var p in panels)
-                this.panels.Add(new Panel(p));
+            if (panels != null)
+                foreach (var p in panels)
+                    this.panels.Add(new Panel(p));
 
-            startServices();
+
+#pragma warning restore CS8600
+#pragma warning restore CS8601
+#pragma warning restore CS8604
+            _ = startServices();
         }
-        public Controller(string ip, string port, string auth_token = null)
+        public Controller(string ip, string port, string? auth_token = null)
         {
             _logger = Tools.LoggerFactory.CreateLogger<Controller>();
             IP = ip;
@@ -253,6 +288,7 @@ namespace NanoleafAPI
             Auth_token = auth_token;
             _ = startServices();
         }
+#pragma warning restore CS8618
 
         ~Controller()
         {
@@ -261,7 +297,7 @@ namespace NanoleafAPI
 
         private async Task startServices()
         {
-            if (Auth_token == null)
+            if (!Tools.IsTokenValid(Auth_token))
             {
                 await RequestToken();
             }
@@ -269,16 +305,16 @@ namespace NanoleafAPI
             _ = this.streamController();
         }
 
-        public async Task<string> RequestToken(int tryes = 20)
+        public async Task RequestToken(int tryes = 20)
         {
             _logger?.LogInformation($"Request AuthToken for Device({IP})");
             int count = 0;
-            while (Auth_token == null && !this.isDisposed)
+            while (!Tools.IsTokenValid(Auth_token) && !this.isDisposed)
                 try
                 {
                     Auth_token = await Communication.AddUser(IP, Port);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     _logger?.LogInformation($"Device({IP}) is maybe not in Pairing-Mode. Please hold the Powerbutton until you see a Visual Feedback on the Controller (5-7)s");
                     await Task.Delay(8000);// If the device is not in Pairing-Mode it takes 5-7s to enable the pairing mode by hand. We try it again after 8s.
@@ -286,8 +322,9 @@ namespace NanoleafAPI
                     if (count >= tryes && Auth_token == null)
                     {
                         _logger?.LogInformation($"Device({IP}) not Response after {count} retries");
-                        return null;
+                        return;
                     }
+                    _logger?.LogDebug(string.Empty, e);
                 }
 
             if (Auth_token != null)
@@ -297,14 +334,12 @@ namespace NanoleafAPI
             }
             else
                 _logger?.LogInformation($"Didn't received AuthToken ({Auth_token}) from Device({IP}) after {count} retries");
-
-            return Auth_token;
         }
 
         private async Task runController()
         {
             _logger?.LogDebug("Run Controller");
-            while (!isDisposed && Auth_token == null)
+            while (!isDisposed && !Tools.IsTokenValid(Auth_token))
                 await Task.Delay(1000);
 
             do
@@ -322,11 +357,18 @@ namespace NanoleafAPI
 
                     await Task.Delay(5000);
 
-                    if (this.Reachable && !isDisposed)
-                        await UpdateInfos(await Communication.GetAllPanelInfo(IP, Port, Auth_token));
+                    if (this.Reachable && !isDisposed && Tools.IsTokenValid(Auth_token))
+                    {
+                        var allPanelInfo = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
+                        if (allPanelInfo != null)
+                            await UpdateInfos(allPanelInfo);
+                        else
+                            _logger?.LogDebug($"{nameof(Communication.GetAllPanelInfo)} returned null!");
+                    }
                 }
                 catch (Exception e)
                 {
+                    _logger?.LogDebug(string.Empty, e);
                 }
             } while (!isDisposed);
         }
@@ -334,6 +376,9 @@ namespace NanoleafAPI
         {
             try
             {
+                if (!Tools.IsTokenValid(Auth_token))
+                    return;
+
                 Communication.StaticOnLayoutEvent -= Communication_StaticOnLayoutEvent;
                 Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
 
@@ -343,8 +388,12 @@ namespace NanoleafAPI
 
                 await BackupSettings(infos);
                 await UpdateInfos(infos);
-                await Communication.StartEventListener(IP, Port, Auth_token);
-                externalControlInfo = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
+                Communication.StartEventListener(IP, Port, Auth_token);
+                var eci= await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
+                if (eci != null)
+                    externalControlInfo = eci;
+                else
+                    _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
             }
             catch (Exception e)
             {
@@ -396,7 +445,7 @@ namespace NanoleafAPI
 
             UpdatedInfos?.InvokeFailSafe(this, EventArgs.Empty);
 
-            _ = UpdatePanelLayout(allPanelInfo.PanelLayout.Layout);
+            UpdatePanelLayout(allPanelInfo.PanelLayout.Layout);
         }
 
         private async Task BackupSettings(AllPanelInfo allPanelInfo)
@@ -412,15 +461,15 @@ namespace NanoleafAPI
             ColorModeStored = allPanelInfo.State.ColorMode;
         }
 
-        private void Communication_StaticOnLayoutEvent(object sender, LayoutEventArgs e)
+        private void Communication_StaticOnLayoutEvent(object? sender, LayoutEventArgs e)
         {
             if (!e.IP.Equals(IP))
                 return;
 
-            if (!isDisposed)
-                _ = UpdatePanelLayout(e.LayoutEvent.Layout);
+            if (!isDisposed && e.LayoutEvent.Layout != null)
+                UpdatePanelLayout(e.LayoutEvent.Layout);
         }
-        private async Task UpdatePanelLayout(Layout layout)
+        private void UpdatePanelLayout(Layout layout)
         {
             var ids = layout.PanelPositions.Select(p => p.PanelId);
             foreach (int id in ids)
@@ -484,7 +533,13 @@ namespace NanoleafAPI
                                 _logger?.LogDebug("Key-Frame");
 #endif
                                 if (panels.Count != 0)
-                                    await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(panels));
+                                {
+                                    var data = Communication.CreateStreamingData(panels);
+                                    if (data != null)
+                                        await Communication.SendUDPCommand(externalControlInfo, data);
+                                    else
+                                        _logger?.LogDebug($"{nameof(Communication.CreateStreamingData)} returned null!");
+                                }
                             }
                             else //Delta-Frame
                             {
@@ -493,7 +548,13 @@ namespace NanoleafAPI
 #endif
                                 var _panels = panels.Where(p => frameTime < p.LastUpdate);
                                 if (_panels.Count() > 0)
-                                    await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(_panels));
+                                {
+                                    var data = Communication.CreateStreamingData(_panels);
+                                    if (data != null)
+                                        await Communication.SendUDPCommand(externalControlInfo, data);
+                                    else
+                                        _logger?.LogDebug($"{nameof(Communication.CreateStreamingData)} returned null!");
+                                }
                             }
                             frameCounter++;
                             lastTimestamp = DateTime.UtcNow;
@@ -537,7 +598,7 @@ namespace NanoleafAPI
         {
             Dispose();
             RestoreParameters();
-            if (deleteUser)
+            if (deleteUser && Tools.IsTokenValid(Auth_token))
                 Communication.DeleteUser(IP, Port, Auth_token).GetAwaiter().GetResult();
 
             _logger?.LogInformation(string.Format("Destruct {0}", this));
@@ -545,6 +606,9 @@ namespace NanoleafAPI
 
         public async void RestoreParameters()
         {
+            if (!Tools.IsTokenValid(Auth_token))
+                return;
+
             try
             {
                 await Communication.SetPanelLayoutGlobalOrientation(IP, Port, Auth_token, GlobalOrientationStored);

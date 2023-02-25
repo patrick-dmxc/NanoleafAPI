@@ -5,6 +5,7 @@ namespace NanoleafAPI
     public class ExternalControlConnectionInfo
     {
         [JsonProperty("streamControlIpAddr")]
+#pragma warning disable CS8618
         public string StreamIPAddress { get; set; }
 
         [JsonProperty("streamControlPort")]
@@ -12,5 +13,6 @@ namespace NanoleafAPI
 
         [JsonProperty("streamControlProtocol")]
         public string StreamProtocol { get; set; }
+#pragma warning restore CS8618
     }
 }

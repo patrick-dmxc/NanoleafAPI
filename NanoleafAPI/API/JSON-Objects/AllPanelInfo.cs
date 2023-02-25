@@ -4,6 +4,7 @@ namespace NanoleafAPI
 {
     public class AllPanelInfo
     {
+#pragma warning disable CS8618
         [JsonProperty("name")]
         public string Name { get; set; }
 
@@ -30,6 +31,7 @@ namespace NanoleafAPI
 
         [JsonProperty("state")]
         public States State { get; set; }
+#pragma warning restore CS8618
 
         public override string ToString()
         {

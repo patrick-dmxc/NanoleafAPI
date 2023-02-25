@@ -1,4 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
+using System.Diagnostics.CodeAnalysis;
+using System.Net;
 
 namespace NanoleafAPI
 {
@@ -31,6 +34,45 @@ namespace NanoleafAPI
                     break;
             }
             return type;
+        }
+
+        public static bool IsIPValid([NotNullWhen(true)] string? ipaddress)
+        {
+            if (string.IsNullOrWhiteSpace(ipaddress))
+                return false;
+
+            IPAddress? ip;
+            bool validateIP = IPAddress.TryParse(ipaddress, out ip);
+            if (!validateIP)
+                return false;
+
+            return true;
+        }
+        public static bool IsPortValid([NotNullWhen(true)] string? port)
+        {
+            if (string.IsNullOrWhiteSpace(port))
+                return false;
+
+
+            try
+            {
+                Convert.ToInt16(port);
+            }
+            catch(Exception)
+            {
+                return false;
+            }
+
+            return true;
+        }
+        public static bool IsTokenValid([NotNullWhen(true)] string? token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return false;
+            if (token.Length != 32)
+                return false;
+
+            return true;
         }
     }
 }

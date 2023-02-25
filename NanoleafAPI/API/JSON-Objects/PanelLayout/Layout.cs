@@ -4,14 +4,13 @@ namespace NanoleafAPI
 {
     public class Layout
     {
+#pragma warning disable CS8618
         [JsonProperty("numPanels")]
         public uint NumberOfPanels { get; set; }
 
-        //[JsonProperty("sideLength")]
-        //public int SideLength { get; set; }
-
         [JsonProperty("positionData")]
         public IEnumerable<PanelPosition> PanelPositions { get; set; }
+#pragma warning restore CS8618
 
         public override string ToString()
         {

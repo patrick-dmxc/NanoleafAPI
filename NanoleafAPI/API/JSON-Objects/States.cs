@@ -4,6 +4,7 @@ namespace NanoleafAPI
 {
     public class States
     {
+#pragma warning disable CS8618
         [JsonProperty("on")]
         public StateOnOff On { get; set; }
         [JsonProperty("brightness")]
@@ -20,5 +21,6 @@ namespace NanoleafAPI
 
         [JsonProperty("colorMode")]
         public string ColorMode { get; set; }
+#pragma warning restore CS8618
     }
 }

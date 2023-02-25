@@ -73,8 +73,12 @@ namespace NanoleafAPI
         public event EventHandler YChanged;
         public event EventHandler OrientationChanged;
 
+#pragma warning disable CS8618
         public Panel(JToken json)
         {
+#pragma warning disable CS8604
+#pragma warning disable CS8600
+#pragma warning disable CS8601
             IP = (string)json[nameof(IP)];
             ID = (int)json[nameof(ID)];
             X = (int)json[nameof(X)];
@@ -82,8 +86,12 @@ namespace NanoleafAPI
             Orientation = (int)json[nameof(Orientation)];
             Shape = (EShapeType)(int)json[nameof(Shape)];
             SideLength = (double)json[nameof(SideLength)];
+#pragma warning restore CS8601
+#pragma warning restore CS8604
+#pragma warning restore CS8600
             Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
         }
+
         public Panel(string ip, PanelPosition pp)
         {
             IP = ip;
@@ -95,8 +103,9 @@ namespace NanoleafAPI
             SideLength = pp.SideLength;
             Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
         }
+#pragma warning restore CS8618
 
-        private void Communication_StaticOnLayoutEvent(object sender, LayoutEventArgs e)
+        private void Communication_StaticOnLayoutEvent(object? sender, LayoutEventArgs e)
         {
             if (!IP.Equals(e.IP))
                 return;
@@ -147,6 +156,19 @@ namespace NanoleafAPI
             public override string ToString()
             {
                 return $"{R}; {G}; {B}; {W}";
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (obj is RGBW rgbw)
+                    return this == rgbw;
+
+                return false;
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(R, G, B, W);
             }
         }
     }

@@ -10,7 +10,7 @@ namespace NanoleafAPI
         private static readonly ILogger log = Tools.LoggerFactory.CreateLogger(typeof(EventTools));
 
         [DebuggerHidden]
-        public static int InvokeFailSafe(this EventHandler @event, object sender, EventArgs args, ILogger? log = null)
+        public static int InvokeFailSafe(this EventHandler @event, object? sender, EventArgs args, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(sender, args), log);
         }
@@ -56,7 +56,7 @@ namespace NanoleafAPI
         /// <param name="log"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static int InvokeFailSafe<T>(this EventHandler<T> @event, object sender, T args, ILogger? log = null)
+        public static int InvokeFailSafe<T>(this EventHandler<T> @event, object? sender, T args, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(sender, args), log);
         }
@@ -70,7 +70,7 @@ namespace NanoleafAPI
         /// <param name="args"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static int InvokeFailSafe(this PropertyChangedEventHandler @event, object sender, PropertyChangedEventArgs args, ILogger? log = null)
+        public static int InvokeFailSafe(this PropertyChangedEventHandler @event, object? sender, PropertyChangedEventArgs args, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(sender, args), log);
         }
@@ -84,7 +84,7 @@ namespace NanoleafAPI
         /// <param name="args"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static int InvokeFailSafe(this CollectionChangeEventHandler @event, object sender, CollectionChangeEventArgs args, ILogger? log = null)
+        public static int InvokeFailSafe(this CollectionChangeEventHandler @event, object? sender, CollectionChangeEventArgs args, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(sender, args), log);
         }
@@ -98,7 +98,7 @@ namespace NanoleafAPI
         /// <param name="args"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static int InvokeFailSafe(this NotifyCollectionChangedEventHandler @event, object sender, NotifyCollectionChangedEventArgs args, ILogger? log = null)
+        public static int InvokeFailSafe(this NotifyCollectionChangedEventHandler @event, object? sender, NotifyCollectionChangedEventArgs args, ILogger? log = null)
         {
             return InvokeFailSaveGeneric(@event, a => a(sender, args), log);
         }

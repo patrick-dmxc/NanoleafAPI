@@ -19,9 +19,11 @@ namespace NanoleafAPI_Tests
         [Test]
         public async Task TestAddUserAndDeleteUserAsync()
         {
-            string authToken = await Communication.AddUser(IP, PORT);
+            string? authToken = await Communication.AddUser(IP, PORT);
+
             Assert.That(authToken, Is.Not.Null);
-            bool sucess = await Communication.DeleteUser(IP, PORT, authToken);
+            Assert.That(Tools.IsTokenValid(authToken), Is.True);
+            bool? sucess = await Communication.DeleteUser(IP, PORT, authToken);
             Assert.That(sucess, Is.True);
         }
         [Test]
@@ -53,6 +55,7 @@ namespace NanoleafAPI_Tests
             var info = await Communication.GetPanelLayoutLayout(IP, PORT, AUTH_TOKEN);
 
             var externalControlInfo = await Communication.SetExternalControlStreaming(IP, PORT, AUTH_TOKEN, EDeviceType.Canvas);
+            Assert.That(externalControlInfo, Is.Not.Null);
 
             List<Panel> panels = new List<Panel>();
             var ids = info.PanelPositions.Select(p => p.PanelId);
@@ -68,7 +71,9 @@ namespace NanoleafAPI_Tests
             {
                 rgbw = new Panel.RGBW(val, 0, 0, 0);
                 panels.ForEach(p => p.StreamingColor = rgbw);
-                await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(panels));
+                var data1 = Communication.CreateStreamingData(panels);
+                Assert.That(data1, Is.Not.Null);
+                await Communication.SendUDPCommand(externalControlInfo, data1);
                 if (val % 2 == 0)
                     await Task.Delay(1);
                 val++;
@@ -80,7 +85,9 @@ namespace NanoleafAPI_Tests
                 rgbw = new Panel.RGBW(255, val, val, 0);
                 var controlPanel = panels.Where(p => p.Shape == PanelPosition.EShapeType.ControlSquarePrimary).ToList();
                 controlPanel.ForEach(p => p.StreamingColor = rgbw);
-                await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(controlPanel));
+                var data2 = Communication.CreateStreamingData(controlPanel);
+                Assert.That(data2, Is.Not.Null);
+                await Communication.SendUDPCommand(externalControlInfo, data2);
                 if (val % 2 == 0)
                     await Task.Delay(1);
                 val++;
@@ -89,7 +96,9 @@ namespace NanoleafAPI_Tests
             do
             {
                 panels.ForEach(p => p.StreamingColor = new Panel.RGBW((byte)(p.StreamingColor.R - 1), (byte)(p.StreamingColor.G - 1), (byte)(p.StreamingColor.B - 1), 0));
-                await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(panels));
+                var data3 = Communication.CreateStreamingData(panels);
+                Assert.That(data3, Is.Not.Null);
+                await Communication.SendUDPCommand(externalControlInfo, data3);
                 if (val % 2 == 0)
                     await Task.Delay(1);
                 val++;
@@ -104,13 +113,17 @@ namespace NanoleafAPI_Tests
                     Random.Shared.NextBytes(randomValues);
                     p.StreamingColor = new Panel.RGBW(randomValues[0], randomValues[1], randomValues[2], randomValues[3]);
                 });
-                await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(panels));
+                var data4 = Communication.CreateStreamingData(panels);
+                Assert.That(data4, Is.Not.Null);
+                await Communication.SendUDPCommand(externalControlInfo, data4);
                 await Task.Delay(10);
             }
 
             rgbw = new Panel.RGBW(0, 0, 0, 0);
             panels.ForEach(p => p.StreamingColor = rgbw);
-            await Communication.SendUDPCommand(externalControlInfo, await Communication.CreateStreamingData(panels));
+            var data5 = Communication.CreateStreamingData(panels);
+            Assert.That(data5, Is.Not.Null);
+            await Communication.SendUDPCommand(externalControlInfo, data5);
         }
         [Test]
         public async Task TestGetSetEffects()
@@ -131,6 +144,7 @@ namespace NanoleafAPI_Tests
             await Task.Delay(500);
             var backupCT = await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN);
             Assert.That(backupCT, Is.Not.Zero);
+            Assert.That(backupCT, Is.Not.Null);
             Assert.That(await Communication.SetStateColorTemperature(IP, PORT, AUTH_TOKEN, 1200), Is.True);
             Assert.That(await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN), Is.EqualTo(1200));
             await Task.Delay(500);
@@ -138,7 +152,7 @@ namespace NanoleafAPI_Tests
             Assert.That(await Communication.SetStateColorTemperatureIncrement(IP, PORT, AUTH_TOKEN, 5300), Is.True);
             Assert.That(await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN), Is.EqualTo(6500));
             await Task.Delay(500);
-            Assert.That(await Communication.SetStateColorTemperature(IP, PORT, AUTH_TOKEN, backupCT), Is.True);
+            Assert.That(await Communication.SetStateColorTemperature(IP, PORT, AUTH_TOKEN, (ushort)backupCT), Is.True);
             Assert.That(await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN), Is.EqualTo(backupCT));
         }
 
@@ -146,14 +160,15 @@ namespace NanoleafAPI_Tests
         public async Task TestGetSetSaturation()
         {
             await Task.Delay(500);
-            var backupSat = await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN); ;
+            var backupSat = await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN);
+            Assert.That(backupSat, Is.Not.Null);
             Assert.That(await Communication.SetStateSaturation(IP, PORT, AUTH_TOKEN, 10), Is.True);
             Assert.That(await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN), Is.EqualTo(10));
             await Task.Delay(500);
             Assert.That(await Communication.SetStateSaturationIncrement(IP, PORT, AUTH_TOKEN, 90), Is.True);
             Assert.That(await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN), Is.EqualTo(100));
             await Task.Delay(500);
-            Assert.That(await Communication.SetStateSaturation(IP, PORT, AUTH_TOKEN, backupSat), Is.True);
+            Assert.That(await Communication.SetStateSaturation(IP, PORT, AUTH_TOKEN, (ushort)backupSat), Is.True);
             Assert.That(await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN), Is.EqualTo(backupSat));
         }
         [Test]
@@ -161,13 +176,14 @@ namespace NanoleafAPI_Tests
         {
             await Task.Delay(500);
             var backupHue = await Communication.GetStateHue(IP, PORT, AUTH_TOKEN);
+            Assert.That(backupHue, Is.Not.Null);
             Assert.That(await Communication.SetStateHue(IP, PORT, AUTH_TOKEN, 0), Is.True);
             Assert.That(await Communication.GetStateHue(IP, PORT, AUTH_TOKEN), Is.Zero);
             await Task.Delay(500);
             Assert.That(await Communication.SetStateHueIncrement(IP, PORT, AUTH_TOKEN, 180), Is.True);
             Assert.That(await Communication.GetStateHue(IP, PORT, AUTH_TOKEN), Is.EqualTo(180));
             await Task.Delay(500);
-            Assert.That(await Communication.SetStateHue(IP, PORT, AUTH_TOKEN, backupHue), Is.True);
+            Assert.That(await Communication.SetStateHue(IP, PORT, AUTH_TOKEN, (ushort)backupHue), Is.True);
             Assert.That(await Communication.GetStateHue(IP, PORT, AUTH_TOKEN), Is.EqualTo(backupHue));
         }
         [Test]
@@ -175,6 +191,7 @@ namespace NanoleafAPI_Tests
         {
             await Task.Delay(500);
             var backupBrightness = await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN);
+            Assert.That(backupBrightness, Is.Not.Null);
             Assert.That(await Communication.SetStateBrightness(IP, PORT, AUTH_TOKEN, 0), Is.True);
             Assert.That(await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN), Is.Zero);
             await Task.Delay(500);
@@ -184,7 +201,7 @@ namespace NanoleafAPI_Tests
             await Task.Delay(1100);
             Assert.That(await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN), Is.Zero);
             await Task.Delay(500);
-            Assert.That(await Communication.SetStateBrightness(IP, PORT, AUTH_TOKEN, backupBrightness), Is.True);
+            Assert.That(await Communication.SetStateBrightness(IP, PORT, AUTH_TOKEN, (ushort)backupBrightness), Is.True);
             Assert.That(await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN), Is.EqualTo(backupBrightness));
         }
 
@@ -193,7 +210,7 @@ namespace NanoleafAPI_Tests
         {
             StateEventArgs? args = null;
             Communication.StaticOnStateEvent += (o, e) => { args = e; };
-            await Communication.StartEventListener(IP, PORT, AUTH_TOKEN);
+            Communication.StartEventListener(IP, PORT, AUTH_TOKEN);
             await Task.Delay(5000);
             Assert.That(await Communication.SetStateOnOff(IP, PORT, AUTH_TOKEN, false), Is.True);
             Assert.That(await Communication.GetStateOnOff(IP, PORT, AUTH_TOKEN), Is.False);
@@ -221,7 +238,7 @@ namespace NanoleafAPI_Tests
             LayoutEventArgs? args = null;
             await Task.Delay(500);
             Communication.StaticOnLayoutEvent += (o, e) => { args = e; };
-            await Communication.StartEventListener(IP, PORT, AUTH_TOKEN);
+            Communication.StartEventListener(IP, PORT, AUTH_TOKEN);
             var backupGlobalOrientation = await Communication.GetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN);
 
             Assert.That(await Communication.SetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN, 120), Is.True);
