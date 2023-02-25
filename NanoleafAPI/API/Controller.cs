@@ -362,16 +362,13 @@ namespace NanoleafAPI
             else
                 _logger?.LogInformation($"{nameof(Auth_token)} for {IP} is invalid");
         }
-        public async Task StopStreaming(string? effect = null)
+        public async Task StopStreaming()
         {
             _logger?.LogInformation($"Stopping Stream to {IP}");
             externalControlInfo = null;
             if (Tools.IsTokenValid(Auth_token))
             {
-                if (string.IsNullOrWhiteSpace(effect))
-                    effect = SelectedEffectStored;
-
-                await Communication.SetSelectedEffect(IP, Port, Auth_token, effect);
+                await restoreParameters();
                 _logger?.LogInformation($"Stopped Stream to {IP}");
             }
             else
