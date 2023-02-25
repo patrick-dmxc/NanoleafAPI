@@ -310,14 +310,13 @@ namespace NanoleafAPI
             _logger?.LogInformation($"Request AuthToken for Device({IP})");
             int count = 0;
             while (!Tools.IsTokenValid(Auth_token) && !this.isDisposed)
+            {
                 try
                 {
                     Auth_token = await Communication.AddUser(IP, Port);
                 }
                 catch (Exception e)
                 {
-                    _logger?.LogInformation($"Device({IP}) is maybe not in Pairing-Mode. Please hold the Powerbutton until you see a Visual Feedback on the Controller (5-7)s");
-                    await Task.Delay(8000);// If the device is not in Pairing-Mode it takes 5-7s to enable the pairing mode by hand. We try it again after 8s.
                     count++;
                     if (count >= tryes && Auth_token == null)
                     {
@@ -326,6 +325,9 @@ namespace NanoleafAPI
                     }
                     _logger?.LogDebug(string.Empty, e);
                 }
+                _logger?.LogInformation($"Device({IP}) is maybe not in Pairing-Mode. Please hold the Powerbutton until you see a Visual Feedback on the Controller (5-7)s");
+                await Task.Delay(8000);// If the device is not in Pairing-Mode it takes 5-7s to enable the pairing mode by hand. We try it again after 8s.
+            }
 
             if (Auth_token != null)
             {

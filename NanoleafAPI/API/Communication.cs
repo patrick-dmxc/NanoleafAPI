@@ -304,15 +304,21 @@ namespace NanoleafAPI
                     StringContent queryString = new StringContent("");
                     _logger?.LogDebug($"Request {nameof(AddUser)} for \"{ip}\"");
                     var response = hc.PostAsync(address, queryString).GetAwaiter().GetResult();
-                    var responseStrings = await response.Content.ReadAsStringAsync();
 
-                    var jObject = JObject.Parse(responseStrings);
-                    result = jObject["auth_token"]?.ToString();
-                    if (result != null)
+                    if (response.StatusCode == HttpStatusCode.OK)
                     {
-                        result = result.Replace("\"", "");
-                        _logger?.LogDebug($"Received {nameof(AddUser)} response: {jObject}");
+                        var responseStrings = await response.Content.ReadAsStringAsync();
+                        var jObject = JObject.Parse(responseStrings);
+                        result = jObject["auth_token"]?.ToString();
+                        if (result != null)
+                        {
+                            result = result.Replace("\"", "");
+                            _logger?.LogDebug($"Received {nameof(AddUser)} response: {jObject}");
+                        }
                     }
+                    else
+                        _logger?.LogDebug($"Received Response for {nameof(AddUser)}: {response}");
+
                 }
                 catch (HttpRequestException he)
                 {
