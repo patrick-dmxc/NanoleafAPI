@@ -616,6 +616,7 @@ namespace NanoleafAPI
                     await Communication.SetStateColorTemperature(IP, Port, Auth_token, 5000);
                 }
 
+                await Task.Delay(2000);
                 // Setting the power state must be the last thing to do due to the fact that all other commands activate the Nanoleafs
                 await Communication.SetStateOnOff(IP, Port, Auth_token, PowerOnStored);
             }
