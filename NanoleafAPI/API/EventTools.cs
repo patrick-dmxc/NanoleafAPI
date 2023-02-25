@@ -111,7 +111,7 @@ namespace NanoleafAPI
         /// <param name="values"></param>
         /// <returns></returns>
         [DebuggerHidden]
-        public static IReadOnlyList<object> InvokeFailSafe(this Delegate @delegate, params object[] values)
+        public static IReadOnlyList<object>? InvokeFailSafe(this Delegate @delegate, params object[] values)
         {
             return InvokeFailSafe(@delegate, elog: null, values: values);
         }
@@ -150,7 +150,7 @@ namespace NanoleafAPI
                 }
                 catch (Exception e)
                 {
-                    (elog ?? log).LogWarning("Exception in Delegate Invocation: {0} => {1}.{2}", e, @delegate.Method, del.Target, del.Method);
+                    (elog ?? log).LogWarning("Exception in Delegate Invocation: {0} => {1}.{2}: {3}", @delegate.Method, del.Target, del.Method, e);
                 }
             }
             return ret;
@@ -172,11 +172,13 @@ namespace NanoleafAPI
                 try
                 {
                     var x = invoker(del);
+                    if (x == null) continue;
+
                     ret.Add(x);
                 }
                 catch (Exception e)
                 {
-                    (elog ?? log).LogWarning("Exception in Delegate Invocation: {0} => {1}.{2}", e, @delegate.Method, del.Target, del.Method);
+                    (elog ?? log).LogWarning("Exception in Delegate Invocation: {0} => {1}.{2}: {3}", @delegate.Method, del.Target, del.Method, e);
                 }
             }
             return ret;
