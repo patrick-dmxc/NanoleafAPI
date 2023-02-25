@@ -1121,7 +1121,7 @@ namespace NanoleafAPI
                 _logger?.LogDebug($"Request {nameof(SetExternalControlStreaming)} for \"{ip}\"");
                 var response = await put(address, contentString);
 
-                if (response?.StatusCode == HttpStatusCode.OK)
+                if (response?.StatusCode == HttpStatusCode.OK || response?.StatusCode == HttpStatusCode.NoContent)
                 {
                     switch (deviceType)
                     {

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.Reflection.Metadata.Ecma335;
 using static NanoleafAPI.PanelPosition;
 
 namespace NanoleafAPI
@@ -146,19 +147,39 @@ namespace NanoleafAPI
             }
             public static bool operator ==(RGBW c1, RGBW c2)
             {
-                return c1.Equals(c2);
+                if (c1.R != c2.R)
+                    return false;
+                if (c1.G != c2.G)
+                    return false;
+                if (c1.B != c2.B)
+                    return false;
+                if (c1.W!= c2.W)
+                    return false;
+
+                return true;
             }
 
             public static bool operator !=(RGBW c1, RGBW c2)
             {
-                return !c1.Equals(c2);
+                if (c1.R != c2.R)
+                    return true;
+                if (c1.G != c2.G)
+                    return true;
+                if (c1.B != c2.B)
+                    return true;
+                if (c1.W != c2.W)
+                    return true;
+
+                return false;
             }
             public override string ToString()
             {
                 return $"{R}; {G}; {B}; {W}";
             }
 
+#pragma warning disable CS8765
             public override bool Equals(object obj)
+#pragma warning restore CS8765
             {
                 if (obj is RGBW rgbw)
                     return this == rgbw;
