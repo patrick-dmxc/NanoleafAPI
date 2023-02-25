@@ -292,6 +292,34 @@ namespace NanoleafAPI
         }
         #endregion
 
+        public static async Task<bool> Ping(string ip, string port)
+        {
+            bool result = false;
+            string address = $"http://{ip}:{port}/api/v1/";
+            using (HttpClient hc = new HttpClient())
+            {
+                try
+                {
+                    StringContent queryString = new StringContent("");
+                    _logger?.LogDebug($"Request {nameof(Ping)} for \"{ip}\"");
+                    var response = hc.PostAsync(address, queryString).GetAwaiter().GetResult();
+
+                    _logger?.LogDebug($"Received Response for {nameof(Ping)}: {response.StatusCode}");
+                    return true;
+
+                }
+                catch (HttpRequestException he)
+                {
+                    _logger?.LogDebug(he, string.Empty);
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
+            }
+            return result;
+        }
+
         #region User
         public static async Task<string?> AddUser(string ip, string port)
         {

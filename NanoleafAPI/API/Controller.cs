@@ -76,6 +76,13 @@ namespace NanoleafAPI
                 _ = this.establishConnection();
             }
         }
+
+        public bool StreamingStarted
+        {
+            get;
+            private set;
+        }
+
         public void SetPowerOn()
         {
             if (!Tools.IsTokenValid(Auth_token))
@@ -348,14 +355,7 @@ namespace NanoleafAPI
             {
                 try
                 {
-                    var res = await ping.SendPingAsync(IP);
-                    if (!isDisposed)
-                    {
-                        if (res.Status == IPStatus.Success)
-                            this.Reachable = true;
-                        else
-                            this.Reachable = false;
-                    }
+                    this.Reachable = await Communication.Ping(IP,Port);
 
                     await Task.Delay(5000);
 
@@ -502,6 +502,7 @@ namespace NanoleafAPI
             streamThread = new Thread(async () =>
             {
                 _logger?.LogDebug("Start Stream");
+                StreamingStarted = true;
                 while (!isDisposed && Auth_token == null)
                     Thread.Sleep(1000);
 
@@ -570,6 +571,7 @@ namespace NanoleafAPI
                     }
                     Thread.SpinWait(10);
                 }
+                StreamingStarted = false;
             });
             streamThread.Name = "NanoleafAPI-StreamThread";
             streamThread.Priority = ThreadPriority.AboveNormal;

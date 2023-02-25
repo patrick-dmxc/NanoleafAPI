@@ -16,7 +16,17 @@ namespace NanoleafAPI_Tests
 
             Communication.RegisterIPAddress(IPAddress.Any);
         }
+        [Test]
+        public async Task TestPing()
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                bool? response = await Communication.Ping(IP, PORT);
 
+                Assert.That(response, Is.True);
+                await Task.Delay(100);
+            }
+        }
 
         [Test]
         public async Task TestAddUserAndDeleteUserAsync()

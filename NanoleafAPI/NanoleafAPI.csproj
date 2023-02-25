@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>0.0.7</Version>
+    <Version>0.0.8</Version>
     <PackageProjectUrl>https://github.com/patrick-dmxc/NanoleafAPI</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
