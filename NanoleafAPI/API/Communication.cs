@@ -1125,7 +1125,7 @@ namespace NanoleafAPI
                 var response = await put(address, contentString);
                 if (response?.StatusCode == HttpStatusCode.OK)
                 {
-                    string content = response.Content;
+                    string? content = response.Content;
                     result = content;//JsonConvert.DeserializeObject<Layout>(content);
                     if (result != null)
                         _logger?.LogDebug($"Received {nameof(GetRequerstAll)}: {result}");
@@ -1152,7 +1152,7 @@ namespace NanoleafAPI
                 var response = await put(address, contentString);
                 if (response?.StatusCode == HttpStatusCode.OK)
                 {
-                    string content = response.Content;
+                    string? content = response.Content;
                     result = content;//JsonConvert.DeserializeObject<Layout>(content);
                     if (result != null)
                         _logger?.LogDebug($"Received {nameof(GetTouchConfig)}: {result}");
@@ -1179,7 +1179,7 @@ namespace NanoleafAPI
                 var response = await put(address, contentString);
                 if (response?.StatusCode == HttpStatusCode.OK)
                 {
-                    string content = response.Content;
+                    string? content = response.Content;
                     result = content;//JsonConvert.DeserializeObject<Layout>(content);
                     if (result != null)
                         _logger?.LogDebug($"Received {nameof(GetTouchKillSwitch)}: {result}");
@@ -1195,6 +1195,26 @@ namespace NanoleafAPI
             }
             return result;
         }
+        public static async Task<bool?> SetTouchKillSwitch(string ip, string port, string auth_token, bool enabled)
+        {
+            bool? result = null;
+            string address = createUrl(ip, port, auth_token, "effects");
+            string contentString = "{" + "\"write\":{\"command\":\"setTouchKillSwitch\",\"touchKillSwitchOn\":" + enabled + "}}";
+            try
+            {
+                _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
+                var response = await put(address, contentString);
+                result = response?.StatusCode == HttpStatusCode.NoContent;
+
+                if (result == true)
+                    _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
+            }
+            catch (Exception e)
+            {
+                _logger?.LogWarning(e, string.Empty);
+            }
+            return result;
+        }
         public static async Task<bool?> SetCommandControllerButtons(string ip, string port, string auth_token, bool enabled)
         {
             bool? result = null;
@@ -1202,12 +1222,52 @@ namespace NanoleafAPI
             string contentString = enabled ? "{" + "\"write\":{ \"command\":\"enableAllControllerButtons\"} }" : "{" + "\"write\":{ \"command\":\"disableAllControllerButtons\"} }";
             try
             {
-                _logger?.LogDebug($"Request {nameof(SetSelectedEffect)} for \"{ip}\"");
+                _logger?.LogDebug($"Request {nameof(SetCommandControllerButtons)} for \"{ip}\"");
                 var response = await put(address, contentString);
                 result = response?.StatusCode == HttpStatusCode.NoContent;
 
                 if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetSelectedEffect)} response: successfull");
+                    _logger?.LogDebug($"Received {nameof(SetCommandControllerButtons)} response: successfull");
+            }
+            catch (Exception e)
+            {
+                _logger?.LogWarning(e, string.Empty);
+            }
+            return result;
+        }
+        public static async Task<bool?> SetCommandSceneChangeAnimation(string ip, string port, string auth_token, bool enabled)
+        {
+            bool? result = null;
+            string address = createUrl(ip, port, auth_token, "effects");
+            string contentString = enabled ? "{\"write\":{ \"command\":\"enableSceneChangeAnimation\"} }" : "{\"write\":{ \"command\":\"disableSceneChangeAnimation\"} }";
+            try
+            {
+                _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
+                var response = await put(address, contentString);
+                result = response?.StatusCode == HttpStatusCode.NoContent;
+
+                if (result == true)
+                    _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
+            }
+            catch (Exception e)
+            {
+                _logger?.LogWarning(e, string.Empty);
+            }
+            return result;
+        }
+        public static async Task<bool?> SetCommandConfigureTouch(string ip, string port, string auth_token, bool enabled)
+        {
+            bool? result = null;
+            string address = createUrl(ip, port, auth_token, "effects");
+            string contentString = "{\"write\":{\"command\":\"configureTouch\",\"touchConfig\":{\"userSystemConfig\":{\"enabled\":" + enabled + "}}}}";
+            try
+            {
+                _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
+                var response = await put(address, contentString);
+                result = response?.StatusCode == HttpStatusCode.NoContent;
+
+                if (result == true)
+                    _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
             }
             catch (Exception e)
             {
