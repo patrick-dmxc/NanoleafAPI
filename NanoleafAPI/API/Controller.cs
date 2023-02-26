@@ -564,6 +564,32 @@ namespace NanoleafAPI
             streamThread.Start();
         }
 
+        public async Task<bool> SetEffect(bool externalControl, string? effectName = null)
+        {
+            if (!Tools.IsTokenValid(Auth_token))
+                return false;
+
+            if (externalControl)
+            {
+                var info = Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
+
+                return (info != null);
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(effectName))
+                    return false;
+
+                var ret = await Communication.SetSelectedEffect(IP, Port, Auth_token, effectName);
+
+                if (ret.HasValue)
+                {
+                    return (bool)ret!;
+                }
+                else
+                    return false;
+            }
+        }
 
         public bool SetPanelColor(int panelID, RGBW color)
         {
