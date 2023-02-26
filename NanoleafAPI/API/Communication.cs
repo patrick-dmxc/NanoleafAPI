@@ -4,14 +4,19 @@ using Newtonsoft.Json.Linq;
 using RestSharp;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
 using Zeroconf;
 using static NanoleafAPI.TouchEvent;
+using static System.Net.Mime.MediaTypeNames;
+using static System.Net.WebRequestMethods;
 
 namespace NanoleafAPI
 {
@@ -1035,6 +1040,174 @@ namespace NanoleafAPI
             catch (HttpRequestException he)
             {
                 _logger?.LogDebug(he, string.Empty);
+            }
+            catch (Exception e)
+            {
+                _logger?.LogWarning(e, string.Empty);
+            }
+            return result;
+        }
+        public static async Task<bool?> IdentifyAndroid(string ip)
+        {
+            bool? result = null;
+            string address = $"http://{ip}:{6517}/identify-android";
+            using (HttpClient hc = new HttpClient())
+            {
+                try
+                {
+                    StringContent queryString = new StringContent("");
+                    _logger?.LogDebug($"Request {nameof(IdentifyAndroid)} for \"{ip}\"");
+                    var response = await hc.PostAsync(address, queryString);
+
+                    result = response?.StatusCode == HttpStatusCode.NoContent || response?.StatusCode == HttpStatusCode.OK;
+
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(IdentifyAndroid)} response: successfull");
+
+                }
+                catch (HttpRequestException he)
+                {
+                    _logger?.LogDebug(he, string.Empty);
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
+            }
+            return result;
+        }
+        #endregion
+        #region FirmwareUpgrade
+        public static async Task<FirmwareUpgrade?> GetFirmwareUpgrade(string ip, string port, string auth_token)
+        {
+            FirmwareUpgrade? result = null;
+            string address = createUrl(ip, port, auth_token, "firmwareUpgrade");
+            using (HttpClient hc = new HttpClient())
+            {
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(GetFirmwareUpgrade)} for \"{ip}\"");
+                    var response = await hc.GetAsync(address);
+                    if (response?.StatusCode == HttpStatusCode.OK)
+                    {
+                        string content = await response.Content.ReadAsStringAsync();
+                        result = JsonConvert.DeserializeObject<FirmwareUpgrade>(content);
+                        if (result != null)
+                            _logger?.LogDebug($"Received {nameof(GetFirmwareUpgrade)}: {result}");
+                        else
+                            _logger?.LogDebug($"Received {nameof(GetFirmwareUpgrade)} response can't be Deserialized: {content}");
+                    }
+                    else
+                        _logger?.LogDebug($"Received Response for {nameof(GetFirmwareUpgrade)}: {response}");
+                }
+                catch (HttpRequestException he)
+                {
+                    _logger?.LogDebug(he, string.Empty);
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
+            }
+            return result;
+        }
+        #endregion
+
+        #region Commands
+        public static async Task<string?> GetRequerstAll(string ip, string port, string auth_token)
+        {
+            string? result = null;
+            string address = createUrl(ip, port, auth_token, "effects");
+            string contentString = "{" + "\"write\":{ \"command\":\"requestAll\"} }";
+            try
+            {
+                _logger?.LogDebug($"Request {nameof(GetRequerstAll)} for \"{ip}\"");
+                var response = await put(address, contentString);
+                if (response?.StatusCode == HttpStatusCode.OK)
+                {
+                    string content = response.Content;
+                    result = content;//JsonConvert.DeserializeObject<Layout>(content);
+                    if (result != null)
+                        _logger?.LogDebug($"Received {nameof(GetRequerstAll)}: {result}");
+                    else
+                        _logger?.LogDebug($"Received {nameof(GetRequerstAll)} response can't be Deserialized: {content}");
+                }
+                else
+                    _logger?.LogDebug($"Received Response for {nameof(GetRequerstAll)}: {response}");
+            }
+            catch (Exception e)
+            {
+                _logger?.LogWarning(e, string.Empty);
+            }
+            return result;
+        }
+        public static async Task<string?> GetTouchConfig(string ip, string port, string auth_token)
+        {
+            string? result = null;
+            string address = createUrl(ip, port, auth_token, "effects");
+            string contentString = "{" + "\"write\":{ \"command\":\"requestTouchConfig\"} }";
+            try
+            {
+                _logger?.LogDebug($"Request {nameof(GetTouchConfig)} for \"{ip}\"");
+                var response = await put(address, contentString);
+                if (response?.StatusCode == HttpStatusCode.OK)
+                {
+                    string content = response.Content;
+                    result = content;//JsonConvert.DeserializeObject<Layout>(content);
+                    if (result != null)
+                        _logger?.LogDebug($"Received {nameof(GetTouchConfig)}: {result}");
+                    else
+                        _logger?.LogDebug($"Received {nameof(GetTouchConfig)} response can't be Deserialized: {content}");
+                }
+                else
+                    _logger?.LogDebug($"Received Response for {nameof(GetTouchConfig)}: {response}");
+            }
+            catch (Exception e)
+            {
+                _logger?.LogWarning(e, string.Empty);
+            }
+            return result;
+        }
+        public static async Task<string?> GetTouchKillSwitch(string ip, string port, string auth_token)
+        {
+            string? result = null;
+            string address = createUrl(ip, port, auth_token, "effects");
+            string contentString = "{" + "\"write\":{ \"command\":\"getTouchKillSwitch\"} }";
+            try
+            {
+                _logger?.LogDebug($"Request {nameof(GetTouchKillSwitch)} for \"{ip}\"");
+                var response = await put(address, contentString);
+                if (response?.StatusCode == HttpStatusCode.OK)
+                {
+                    string content = response.Content;
+                    result = content;//JsonConvert.DeserializeObject<Layout>(content);
+                    if (result != null)
+                        _logger?.LogDebug($"Received {nameof(GetTouchKillSwitch)}: {result}");
+                    else
+                        _logger?.LogDebug($"Received {nameof(GetTouchKillSwitch)} response can't be Deserialized: {content}");
+                }
+                else
+                    _logger?.LogDebug($"Received Response for {nameof(GetTouchKillSwitch)}: {response}");
+            }
+            catch (Exception e)
+            {
+                _logger?.LogWarning(e, string.Empty);
+            }
+            return result;
+        }
+        public static async Task<bool?> SetCommandControllerButtons(string ip, string port, string auth_token, bool enabled)
+        {
+            bool? result = null;
+            string address = createUrl(ip, port, auth_token, "effects");
+            string contentString = enabled ? "{" + "\"write\":{ \"command\":\"enableAllControllerButtons\"} }" : "{" + "\"write\":{ \"command\":\"disableAllControllerButtons\"} }";
+            try
+            {
+                _logger?.LogDebug($"Request {nameof(SetSelectedEffect)} for \"{ip}\"");
+                var response = await put(address, contentString);
+                result = response?.StatusCode == HttpStatusCode.NoContent;
+
+                if (result == true)
+                    _logger?.LogDebug($"Received {nameof(SetSelectedEffect)} response: successfull");
             }
             catch (Exception e)
             {

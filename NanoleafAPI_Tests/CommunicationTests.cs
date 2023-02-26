@@ -303,5 +303,29 @@ namespace NanoleafAPI_Tests
             Assert.That(await Communication.Identify(IP, PORT, AUTH_TOKEN), Is.True);
             await Task.Delay(5000);
         }
+        [Test]
+        public async Task TestIdentifyAndroid()
+        {
+            await Task.Delay(500);
+            Assert.That(await Communication.IdentifyAndroid(IP), Is.True);
+            await Task.Delay(5000);
+        }
+
+        [Test]
+        public async Task TestFirmwareUpgrade()
+        {
+            await Task.Delay(500);
+            Assert.That(await Communication.GetFirmwareUpgrade(IP, PORT, AUTH_TOKEN), Is.Not.Null);
+            await Task.Delay(5000);
+        }
+        [Test]
+        public async Task TestCommands()
+        {
+            await Task.Delay(500);
+            Assert.That(await Communication.GetTouchConfig(IP, PORT, AUTH_TOKEN), Is.Not.Null);
+            Assert.That(await Communication.GetTouchKillSwitch(IP, PORT, AUTH_TOKEN), Is.Not.Null);
+            Assert.That(await Communication.GetRequerstAll(IP, PORT, AUTH_TOKEN), Is.Not.Null);
+            await Task.Delay(5000);
+        }
     }
 }

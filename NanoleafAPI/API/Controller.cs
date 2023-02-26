@@ -369,11 +369,14 @@ namespace NanoleafAPI
         }
         public async Task RestartStreaming()
         {
-            var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
-            if (eci != null)
-                externalControlInfo = eci;
-            else
-                _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
+            if (Tools.IsTokenValid(Auth_token))
+            {
+                var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
+                if (eci != null)
+                    externalControlInfo = eci;
+                else
+                    _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
+            }
         }
         public async Task StopStreaming()
         {
