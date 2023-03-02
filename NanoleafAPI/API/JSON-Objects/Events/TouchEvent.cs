@@ -12,7 +12,7 @@ namespace NanoleafAPI
         Swipe,
         UNKNOWN,
     }
-    public class TouchEvent
+    public struct TouchEvent
     {
         public readonly long Timestamp;
         public int TouchedPanelsNumber { get; private set; }
@@ -29,6 +29,7 @@ namespace NanoleafAPI
         {
             this.TouchedPanelsNumber = touchedPanelsNumber;
             this._touchPanelEvents.AddRange(touchPanelEvents);
+            this.Timestamp = DateTime.UtcNow.Ticks;
         }
         private TouchEvent(byte[] array)
         {
@@ -53,7 +54,7 @@ namespace NanoleafAPI
         {
             return new TouchEvent(array);
         }
-        public class TouchPanelEvent
+        public struct TouchPanelEvent
         {
             public int PanelId { get; private set; }
             public int? PanelIdSwipedFrom { get; private set; } = null;
@@ -69,9 +70,9 @@ namespace NanoleafAPI
             }
             private TouchPanelEvent(byte[] array)
             {
-                this.PanelId = System.BitConverter.ToUInt16(new[] { array[1], array[0] }, 0);
+                this.PanelId = BitConverter.ToUInt16(new[] { array[1], array[0] }, 0);
                 if (array[4] != byte.MaxValue || array[3] != byte.MaxValue)
-                    this.PanelIdSwipedFrom = System.BitConverter.ToUInt16(new[] { array[4], array[3] }, 0);
+                    this.PanelIdSwipedFrom = BitConverter.ToUInt16(new[] { array[4], array[3] }, 0);
 
                 var bit0 = getBit(array[2], 1);
                 var bit1 = getBit(array[2], 2);
@@ -91,7 +92,7 @@ namespace NanoleafAPI
             {
                 return new TouchPanelEvent(array);
             }
-            private bool getBit(byte b, byte bitNumber)
+            private static bool getBit(byte b, byte bitNumber)
             {
                 return (b & (1 << bitNumber - 1)) != 0;
             }

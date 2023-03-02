@@ -1,26 +1,27 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class States
+    public struct States
     {
-#pragma warning disable CS8618
-        [JsonProperty("on")]
-        public StateOnOff On { get; set; }
-        [JsonProperty("brightness")]
-        public StateInfo Brightness { get; set; }
+        [JsonPropertyName("on")]
+        public StateOnOff On { get; }
+        [JsonPropertyName("brightness")]
+        public StateInfo Brightness { get; }
 
-        [JsonProperty("hue")]
-        public StateInfo Hue { get; set; }
+        [JsonPropertyName("hue")]
+        public StateInfo Hue { get; }
 
-        [JsonProperty("sat")]
-        public StateInfo Saturation { get; set; }
+        [JsonPropertyName("sat")]
+        public StateInfo Saturation { get; }
 
-        [JsonProperty("ct")]
-        public StateInfo ColorTemprature { get; set; }
+        [JsonPropertyName("ct")]
+        public StateInfo ColorTemprature { get; }
 
-        [JsonProperty("colorMode")]
-        public string ColorMode { get; set; }
-#pragma warning restore CS8618
+        [JsonPropertyName("colorMode")]
+        public string ColorMode { get; }
+
+        [JsonConstructor]
+        public States(StateOnOff on, StateInfo brightness, StateInfo hue, StateInfo saturation, StateInfo colorTemprature, string colorMode) => (On, Brightness, Hue, Saturation, ColorTemprature, ColorMode) = (on, brightness, hue, saturation, colorTemprature, colorMode);
     }
 }

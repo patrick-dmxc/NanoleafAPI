@@ -1,15 +1,16 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class Effects
+    public struct Effects
     {
-#pragma warning disable CS8618
-        [JsonProperty("effectsList")]
-        public IEnumerable<string> List { get; set; }
+        [JsonPropertyName("effectsList")]
+        public IReadOnlyList<string> List { get; }
 
-        [JsonProperty("select")]
-        public string Selected { get; set; }
-#pragma warning restore CS8618
+        [JsonPropertyName("select")]
+        public string Selected { get; }
+
+        [JsonConstructor]
+        public Effects(string selected, IReadOnlyList<string> list) => (Selected, List) = (selected, list);
     }
 }

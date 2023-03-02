@@ -82,9 +82,22 @@ namespace NanoleafTest
 
         private static void Communication_StaticOnLayoutEvent(object sender, LayoutEventArgs e)
         {
-            _logger?.LogInformation($"{e.IP}: Layout Changed: GlobalOrientation: {e.LayoutEvent.GlobalOrientation} NumberOfPanels: {e.LayoutEvent.Layout.NumberOfPanels}");
-            foreach (var pp in e.LayoutEvent.Layout.PanelPositions)
-                _logger?.LogInformation(pp.ToString());
+            foreach (var _event in e.LayoutEvents.Events)
+            {
+                switch (_event.Attribute)
+                {
+                    case LayoutEvent.EAttribute.Layout:
+                        _logger?.LogInformation($"{e.IP}: Layout Changed: NumberOfPanels: {_event.Layout.Value.NumberOfPanels}");
+                        foreach (var pp in _event.Layout.Value.PanelPositions)
+                            _logger?.LogInformation(pp.ToString());
+                        break;
+                    case LayoutEvent.EAttribute.GlobalOrientation:
+                        _logger?.LogInformation($"{e.IP}: Layout Changed: GlobalOrientation: {_event.GlobalOrientation}");
+                        foreach (var pp in _event.Layout.Value.PanelPositions)
+                            _logger?.LogInformation(pp.ToString());
+                        break;
+                }
+            }
         }
 
         private static void Communication_StaticOnTouchEvent(object sender, TouchEventArgs e)

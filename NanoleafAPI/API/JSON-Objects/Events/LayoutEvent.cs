@@ -1,54 +1,50 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class LayoutEvent
+    public struct LayoutEvent
     {
-        public Layout? Layout { get; set; }
+        [JsonPropertyName("attr")]
+        public EAttribute Attribute { get; }
 
-        public int? GlobalOrientation { get; set; }
+        [JsonPropertyName("value")]
+        public JsonElement Value { get; }
+
+        public Layout? Layout { get; } = null;
+
+        public float? GlobalOrientation { get; } = null;
+
+        public enum EAttribute
+        {
+            UNKNOWN,
+            Layout,
+            GlobalOrientation
+        }
+
+        [JsonConstructor]
+        public LayoutEvent(EAttribute attribute, JsonElement value)
+        {
+            Attribute = attribute;
+            Value = value;
+            switch (Attribute)
+            {
+                case EAttribute.Layout:
+                    Layout = value.Deserialize<Layout>();
+                    break;
+                case EAttribute.GlobalOrientation:
+                    GlobalOrientation = value.Deserialize<float>();
+                    break;
+            }
+        }
     }
-    public class LayoutEventConverter : JsonConverter<LayoutEvent>
+
+    public struct LayoutEvents
     {
-        public static LayoutEventConverter Instance { get; private set; } = new LayoutEventConverter();
+        [JsonPropertyName("events")]
+        public IReadOnlyList<LayoutEvent> Events { get; }
 
-        public override LayoutEvent? ReadJson(JsonReader reader, Type objectType, LayoutEvent? existingValue, bool hasExistingValue, JsonSerializer serializer)
-        {
-            try
-            {
-                Layout? layout = null;
-                int? globalOrientation = null;
-                JObject jObject = JObject.Load(reader);
-                foreach (var obj in jObject.Root.Children().Single().First())
-                {
-                    if (obj["value"] is null)
-                        continue;
-
-                    switch ((int?)obj["attr"])
-                    {
-                        case 1:
-                            layout = JsonConvert.DeserializeObject<Layout>(obj["value"]!.ToString());
-                            break;
-                        case 2:
-                            globalOrientation = (int)obj["value"]!;
-                            break;
-                        default:
-                            continue;
-                    }
-                }
-                return new LayoutEvent() { Layout = layout, GlobalOrientation = globalOrientation };
-            }
-            catch (Exception)
-            {
-
-            }
-            return null;
-        }
-
-        public override void WriteJson(JsonWriter writer, LayoutEvent? value, JsonSerializer serializer)
-        {
-            throw new NotImplementedException();
-        }
+        [JsonConstructor]
+        public LayoutEvents(IReadOnlyList<LayoutEvent> events) => (Events) = (events);
     }
 }

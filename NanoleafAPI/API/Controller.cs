@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
-using System.Net.NetworkInformation;
 using static NanoleafAPI.Panel;
 
 namespace NanoleafAPI
@@ -27,8 +25,8 @@ namespace NanoleafAPI
 
 
         public uint NumberOfPanels { get; private set; }
-        private ushort globalOrientation;
-        public ushort GlobalOrientation
+        private float globalOrientation;
+        public float GlobalOrientation
         {
             get { return globalOrientation; }
             private set
@@ -39,13 +37,13 @@ namespace NanoleafAPI
                 _ = Communication.SetPanelLayoutGlobalOrientation(IP, Port, Auth_token, value);
             }
         }
-        public ushort GlobalOrientationStored { get; private set; }
-        public ushort GlobalOrientationMin
+        public float GlobalOrientationStored { get; private set; }
+        public float GlobalOrientationMin
         {
             get;
             private set;
         }
-        public ushort GlobalOrientationMax
+        public float GlobalOrientationMax
         {
             get;
             private set;
@@ -73,7 +71,7 @@ namespace NanoleafAPI
                 this.reachable = value;
                 _logger?.LogInformation($"{this} is reachable.");
                 _ = this.establishConnection();
-                if (externalControlInfo != null && value)
+                if ((!externalControlInfo.HasValue) && value)
                     _ = RestartStreaming();
                 ReachableChanged?.InvokeFailSafe(this, EventArgs.Empty);
             }
@@ -101,9 +99,9 @@ namespace NanoleafAPI
             _ = Communication.SetStateOnOff(IP, Port, Auth_token, false);
         }
 
-        private ushort brightness;
+        private float brightness;
 
-        public ushort Brightness
+        public float Brightness
         {
             get { return brightness; }
             set
@@ -114,19 +112,19 @@ namespace NanoleafAPI
                 _ = Communication.SetStateBrightness(IP, Port, Auth_token, value);
             }
         }
-        public ushort BrightnessStored { get; private set; }
-        public ushort BrightnessMin
+        public float BrightnessStored { get; private set; }
+        public float BrightnessMin
         {
             get;
             private set;
         }
-        public ushort BrightnessMax
+        public float BrightnessMax
         {
             get;
             private set;
         }
-        private ushort hue;
-        public ushort Hue
+        private float hue;
+        public float Hue
         {
             get { return hue; }
             set
@@ -137,19 +135,19 @@ namespace NanoleafAPI
                 _ = Communication.SetStateHue(IP, Port, Auth_token, value);
             }
         }
-        public ushort HueStored { get; private set; }
-        public ushort HueMin
+        public float HueStored { get; private set; }
+        public float HueMin
         {
             get;
             private set;
         }
-        public ushort HueMax
+        public float HueMax
         {
             get;
             private set;
         }
-        private ushort saturation;
-        public ushort Saturation
+        private float saturation;
+        public float Saturation
         {
             get { return saturation; }
             set
@@ -160,19 +158,19 @@ namespace NanoleafAPI
                 _ = Communication.SetStateSaturation(IP, Port, Auth_token, value);
             }
         }
-        public ushort SaturationStored { get; private set; }
-        public ushort SaturationMin
+        public float SaturationStored { get; private set; }
+        public float SaturationMin
         {
             get;
             private set;
         }
-        public ushort SaturationMax
+        public float SaturationMax
         {
             get;
             private set;
         }
-        private ushort colorTemprature;
-        public ushort ColorTemprature
+        private float colorTemprature;
+        public float ColorTemprature
         {
             get { return colorTemprature; }
             set
@@ -183,13 +181,13 @@ namespace NanoleafAPI
                 _ = Communication.SetStateColorTemperature(IP, Port, Auth_token, value);
             }
         }
-        public ushort ColorTempratureStored { get; private set; }
-        public ushort ColorTempratureMin
+        public float ColorTempratureStored { get; private set; }
+        public float ColorTempratureMin
         {
             get;
             private set;
         }
-        public ushort ColorTempratureMax
+        public float ColorTempratureMax
         {
             get;
             private set;
@@ -256,7 +254,9 @@ namespace NanoleafAPI
             {
                 try
                 {
-                    Auth_token = await Communication.AddUser(IP, Port);
+                    var user = await Communication.AddUser(IP, Port);
+                    if (user.HasValue)
+                        Auth_token = user.Value.AuthToken;
                 }
                 catch (Exception e)
                 {
@@ -332,10 +332,10 @@ namespace NanoleafAPI
                 Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
 
                 var infos = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
-                if (infos == null)
+                if (!infos.HasValue)
                     return;
 
-                backupSettings(infos);
+                backupSettings(infos.Value);
                 updateInfos(infos);
                 Communication.StartEventListener(IP, Port, Auth_token);
             }
@@ -350,14 +350,14 @@ namespace NanoleafAPI
             if (Tools.IsTokenValid(Auth_token))
             {
                 var infos = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
-                if (infos != null)
+                if (infos.HasValue)
                 {
-                    backupSettings(infos);
+                    backupSettings(infos.Value);
                     updateInfos(infos);
                 }
 
                 var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
-                if (eci != null)
+                if (eci.HasValue)
                     externalControlInfo = eci;
                 else
                     _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
@@ -391,51 +391,53 @@ namespace NanoleafAPI
                 _logger?.LogInformation($"{nameof(Auth_token)} for {IP} is invalid");
         }
 
-        private void updateInfos(AllPanelInfo allPanelInfo)
+        private void updateInfos(AllPanelInfo? allPanelInfo)
         {
-            if (allPanelInfo == null)
+            if (!allPanelInfo.HasValue)
             {
                 this.Reachable = false;
                 return;
             }
             this.Reachable = true;
 
-            Name = allPanelInfo.Name;
-            Model = allPanelInfo.Model;
-            Manufacturer = allPanelInfo.Manufacturer;
-            SerialNumber = allPanelInfo.SerialNumber;
-            HardwareVersion = allPanelInfo.HardwareVersion;
-            FirmwareVersion = allPanelInfo.FirmwareVersion;
+            AllPanelInfo apl = allPanelInfo.Value;
+
+            Name = apl.Name;
+            Model = apl.Model;
+            Manufacturer = apl.Manufacturer;
+            SerialNumber = apl.SerialNumber;
+            HardwareVersion = apl.HardwareVersion;
+            FirmwareVersion = apl.FirmwareVersion;
 
             DeviceType = Tools.ModelStringToEnum(Model);
 
-            NumberOfPanels = allPanelInfo.PanelLayout.Layout.NumberOfPanels;
-            globalOrientation = allPanelInfo.PanelLayout.GlobalOrientation.Value;
-            GlobalOrientationMin = (ushort)allPanelInfo.PanelLayout.GlobalOrientation.Min;
-            GlobalOrientationMax = (ushort)allPanelInfo.PanelLayout.GlobalOrientation.Max;
+            NumberOfPanels = apl.PanelLayout.Layout.NumberOfPanels;
+            globalOrientation = apl.PanelLayout.GlobalOrientation.Value;
+            GlobalOrientationMin = (float)apl.PanelLayout.GlobalOrientation.Min;
+            GlobalOrientationMax = (float)apl.PanelLayout.GlobalOrientation.Max;
 
-            EffectList = allPanelInfo.Effects.List.ToArray();
-            SelectedEffect = allPanelInfo.Effects.Selected;
-            PowerOn = allPanelInfo.State.On.On;
+            EffectList = apl.Effects.List.ToArray();
+            SelectedEffect = apl.Effects.Selected;
+            PowerOn = apl.State.On.On;
             PowerOff = !PowerOn;
 
-            brightness = allPanelInfo.State.Brightness.Value;
-            BrightnessMin = (ushort)allPanelInfo.State.Brightness.Min;
-            BrightnessMax = (ushort)allPanelInfo.State.Brightness.Max;
-            hue = allPanelInfo.State.Hue.Value;
-            HueMin = (ushort)allPanelInfo.State.Hue.Min;
-            HueMax = (ushort)allPanelInfo.State.Hue.Max;
-            saturation = allPanelInfo.State.Saturation.Value;
-            SaturationMin = (ushort)allPanelInfo.State.Saturation.Min;
-            SaturationMax = (ushort)allPanelInfo.State.Saturation.Max;
-            colorTemprature = allPanelInfo.State.ColorTemprature.Value;
-            ColorTempratureMin = (ushort)allPanelInfo.State.ColorTemprature.Min;
-            ColorTempratureMax = (ushort)allPanelInfo.State.ColorTemprature.Max;
-            ColorMode = allPanelInfo.State.ColorMode;
+            brightness = apl.State.Brightness.Value;
+            BrightnessMin = (float)apl.State.Brightness.Min;
+            BrightnessMax = (float)apl.State.Brightness.Max;
+            hue = apl.State.Hue.Value;
+            HueMin = (float)apl.State.Hue.Min;
+            HueMax = (float)apl.State.Hue.Max;
+            saturation = apl.State.Saturation.Value;
+            SaturationMin = (float)apl.State.Saturation.Min;
+            SaturationMax = (float)apl.State.Saturation.Max;
+            colorTemprature = apl.State.ColorTemprature.Value;
+            ColorTempratureMin = (float)apl.State.ColorTemprature.Min;
+            ColorTempratureMax = (float)apl.State.ColorTemprature.Max;
+            ColorMode = apl.State.ColorMode;
 
             UpdatedInfos?.InvokeFailSafe(this, EventArgs.Empty);
 
-            UpdatePanelLayout(allPanelInfo.PanelLayout.Layout);
+            UpdatePanelLayout(apl.PanelLayout.Layout);
         }
 
         private void backupSettings(AllPanelInfo allPanelInfo)
@@ -456,8 +458,9 @@ namespace NanoleafAPI
             if (!e.IP.Equals(IP))
                 return;
 
-            if (!isDisposed && e.LayoutEvent.Layout != null)
-                UpdatePanelLayout(e.LayoutEvent.Layout);
+            foreach (var @event in e.LayoutEvents.Events)
+                if (!isDisposed && @event.Layout.HasValue)
+                    UpdatePanelLayout(@event.Layout.Value);
         }
         private void UpdatePanelLayout(Layout layout)
         {
@@ -500,7 +503,7 @@ namespace NanoleafAPI
                 while (!isDisposed)
                 {
                     nowTimestamp = DateTime.UtcNow;
-                    if (externalControlInfo == null)
+                    if (!externalControlInfo.HasValue)
                     {
                         await Task.Delay(10);
                         continue;
@@ -526,8 +529,8 @@ namespace NanoleafAPI
                                 if (panels.Count != 0)
                                 {
                                     var data = Communication.CreateStreamingData(panels);
-                                    if (data != null)
-                                        await Communication.SendUDPCommand(externalControlInfo, data);
+                                    if (data != null && externalControlInfo.HasValue)
+                                        await Communication.SendUDPCommand(externalControlInfo.Value, data);
                                     else
                                         _logger?.LogDebug($"{nameof(Communication.CreateStreamingData)} returned null!");
                                 }
@@ -541,8 +544,8 @@ namespace NanoleafAPI
                                 if (_panels.Count() > 0)
                                 {
                                     var data = Communication.CreateStreamingData(_panels);
-                                    if (data != null)
-                                        await Communication.SendUDPCommand(externalControlInfo, data);
+                                    if (data != null && externalControlInfo.HasValue)
+                                        await Communication.SendUDPCommand(externalControlInfo.Value, data);
                                     else
                                         _logger?.LogDebug($"{nameof(Communication.CreateStreamingData)} returned null!");
                                 }

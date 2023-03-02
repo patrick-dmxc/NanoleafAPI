@@ -1,6 +1,7 @@
 using NanoleafAPI;
 using System.Net;
-using static NanoleafAPI.StateEvent;
+using EAttribute_StateEvent = NanoleafAPI.StateEvent.EAttribute;
+using EAttribute_LayoutEvent = NanoleafAPI.LayoutEvent.EAttribute;
 
 namespace NanoleafAPI_Tests
 {
@@ -43,7 +44,10 @@ namespace NanoleafAPI_Tests
         {
             for (int i = 0; i < 10; i++)
             {
-                string? authToken = await Communication.AddUser(IP, PORT);
+                var user = await Communication.AddUser(IP, PORT);
+
+                Assert.That(user.HasValue, Is.True);
+                string? authToken = user.Value.AuthToken;
 
                 Assert.That(authToken, Is.Not.Null);
                 Assert.That(Tools.IsTokenValid(authToken), Is.True);
@@ -57,22 +61,22 @@ namespace NanoleafAPI_Tests
         {
             await Task.Delay(500);
             var info = await Communication.GetAllPanelInfo(IP, PORT, AUTH_TOKEN);
-            Assert.That(info, Is.Not.Null);
+            Assert.That(info.HasValue, Is.True);
             Assert.Multiple(() =>
             {
-                Assert.That(info.SerialNumber, Is.EqualTo("S19124C8036"));
-                Assert.That(info.Model, Is.EqualTo("NL29"));
-                Assert.That(info.Name, Is.EqualTo("Canvas C097"));
-                Assert.That(info.HardwareVersion, Is.EqualTo("2.0-4"));
-                Assert.That(info.Manufacturer, Is.EqualTo("Nanoleaf"));
+                Assert.That(info.Value.SerialNumber, Is.EqualTo("S19124C8036"));
+                Assert.That(info.Value.Model, Is.EqualTo("NL29"));
+                Assert.That(info.Value.Name, Is.EqualTo("Canvas C097"));
+                Assert.That(info.Value.HardwareVersion, Is.EqualTo("2.0-4"));
+                Assert.That(info.Value.Manufacturer, Is.EqualTo("Nanoleaf"));
             });
 
-            Assert.That(await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.State.Brightness.Value));
-            Assert.That(await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.State.Saturation.Value));
-            Assert.That(await Communication.GetStateHue(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.State.Hue.Value));
-            Assert.That(await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.State.ColorTemprature.Value));
-            Assert.That(await Communication.GetColorMode(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.State.ColorMode));
-            Assert.That(await Communication.GetStateOnOff(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.State.On.On));
+            Assert.That(await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.Brightness.Value));
+            Assert.That(await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.Saturation.Value));
+            Assert.That(await Communication.GetStateHue(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.Hue.Value));
+            Assert.That(await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.ColorTemprature.Value));
+            Assert.That(await Communication.GetColorMode(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.ColorMode));
+            Assert.That(await Communication.GetStateOnOff(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.On.On));
         }
 
         [Test]
@@ -80,16 +84,16 @@ namespace NanoleafAPI_Tests
         {
             await Task.Delay(500);
             var info = await Communication.GetPanelLayoutLayout(IP, PORT, AUTH_TOKEN);
-            Assert.That(info, Is.Not.Null);
+            Assert.That(info.HasValue, Is.True);
 
             var externalControlInfo = await Communication.SetExternalControlStreaming(IP, PORT, AUTH_TOKEN, EDeviceType.Canvas);
-            Assert.That(externalControlInfo, Is.Not.Null);
+            Assert.That(externalControlInfo.HasValue, Is.True);
 
             List<Panel> panels = new List<Panel>();
-            var ids = info.PanelPositions.Select(p => p.PanelId);
+            var ids = info.Value.PanelPositions.Select(p => p.PanelId);
             foreach (int id in ids)
             {
-                var pp = info.PanelPositions.Single(p => p.PanelId.Equals(id));
+                var pp = info.Value.PanelPositions.Single(p => p.PanelId.Equals(id));
                 panels.Add(new Panel(IP, pp));
             }
 
@@ -101,7 +105,7 @@ namespace NanoleafAPI_Tests
                 panels.ForEach(p => p.StreamingColor = rgbw);
                 var data1 = Communication.CreateStreamingData(panels);
                 Assert.That(data1, Is.Not.Null);
-                await Communication.SendUDPCommand(externalControlInfo!, data1);
+                await Communication.SendUDPCommand(externalControlInfo.Value, data1);
                 if (val % 2 == 0)
                     await Task.Delay(1);
                 val++;
@@ -115,7 +119,7 @@ namespace NanoleafAPI_Tests
                 controlPanel.ForEach(p => p.StreamingColor = rgbw);
                 var data2 = Communication.CreateStreamingData(controlPanel);
                 Assert.That(data2, Is.Not.Null);
-                await Communication.SendUDPCommand(externalControlInfo!, data2);
+                await Communication.SendUDPCommand(externalControlInfo.Value, data2);
                 if (val % 2 == 0)
                     await Task.Delay(1);
                 val++;
@@ -126,7 +130,7 @@ namespace NanoleafAPI_Tests
                 panels.ForEach(p => p.StreamingColor = new Panel.RGBW((byte)(p.StreamingColor.R - 1), (byte)(p.StreamingColor.G - 1), (byte)(p.StreamingColor.B - 1), 0));
                 var data3 = Communication.CreateStreamingData(panels);
                 Assert.That(data3, Is.Not.Null);
-                await Communication.SendUDPCommand(externalControlInfo, data3);
+                await Communication.SendUDPCommand(externalControlInfo.Value, data3);
                 if (val % 2 == 0)
                     await Task.Delay(1);
                 val++;
@@ -143,7 +147,7 @@ namespace NanoleafAPI_Tests
                 });
                 var data4 = Communication.CreateStreamingData(panels);
                 Assert.That(data4, Is.Not.Null);
-                await Communication.SendUDPCommand(externalControlInfo, data4);
+                await Communication.SendUDPCommand(externalControlInfo.Value, data4);
                 await Task.Delay(10);
             }
 
@@ -151,7 +155,7 @@ namespace NanoleafAPI_Tests
             panels.ForEach(p => p.StreamingColor = rgbw);
             var data5 = Communication.CreateStreamingData(panels);
             Assert.That(data5, Is.Not.Null);
-            await Communication.SendUDPCommand(externalControlInfo, data5);
+            await Communication.SendUDPCommand(externalControlInfo.Value, data5);
         }
         [Test]
         public async Task TestGetSetEffects()
@@ -236,29 +240,31 @@ namespace NanoleafAPI_Tests
         [Test]
         public async Task TestGetSetOnOff()
         {
+            await Communication.SetStateOnOff(IP, PORT, AUTH_TOKEN, true);
+            await Task.Delay(1000);
             StateEventArgs? args = null;
             Communication.StaticOnStateEvent += (o, e) => { args = e; };
             Communication.StartEventListener(IP, PORT, AUTH_TOKEN);
-            await Task.Delay(5000);
+            await Task.Delay(2000);
             Assert.That(await Communication.SetStateOnOff(IP, PORT, AUTH_TOKEN, false), Is.True);
             Assert.That(await Communication.GetStateOnOff(IP, PORT, AUTH_TOKEN), Is.False);
-            while (args?.StateEvents?.Events?.FirstOrDefault(e => e.Attribute == EAttribute.On) == null)
+            while (args?.StateEvents.Events?.FirstOrDefault(e => e.Attribute == EAttribute_StateEvent.On) == null)
                 await Task.Delay(1);
             Assert.That(args.IP, Is.EqualTo(IP));
-            Assert.That(args.StateEvents.Events.First(e => e.Attribute == EAttribute.On).Attribute, Is.EqualTo(EAttribute.On));
-            Assert.That(args.StateEvents.Events.First(e => e.Attribute == EAttribute.On).Value, Is.False);
+            Assert.That(args.StateEvents.Events.First(e => e.Attribute == EAttribute_StateEvent.On).Attribute, Is.EqualTo(EAttribute_StateEvent.On));
+            Assert.That(args.StateEvents.Events.First(e => e.Attribute == EAttribute_StateEvent.On).On, Is.False);
             args = null;
 
-            await Task.Delay(5000);
+            await Task.Delay(2000);
             Assert.That(await Communication.SetStateOnOff(IP, PORT, AUTH_TOKEN, true), Is.True);
             Assert.That(await Communication.GetStateOnOff(IP, PORT, AUTH_TOKEN), Is.True);
-            while (args?.StateEvents?.Events?.FirstOrDefault(e => e.Attribute == EAttribute.On) == null)
+            while (args?.StateEvents.Events?.FirstOrDefault(e => e.Attribute == EAttribute_StateEvent.On) == null)
                 await Task.Delay(1);
             Assert.That(args.IP, Is.EqualTo(IP));
-            Assert.That(args.StateEvents.Events.First(e => e.Attribute == EAttribute.On).Attribute, Is.EqualTo(EAttribute.On));
-            Assert.That(args.StateEvents.Events.First(e => e.Attribute == EAttribute.On).Value, Is.True);
+            Assert.That(args.StateEvents.Events.First(e => e.Attribute == EAttribute_StateEvent.On).Attribute, Is.EqualTo(EAttribute_StateEvent.On));
+            Assert.That(args.StateEvents.Events.First(e => e.Attribute == EAttribute_StateEvent.On).On, Is.True);
             args = null;
-            await Task.Delay(5000);
+            await Task.Delay(2000);
         }
         [Test]
         public async Task TestGetSetGlobalOrientation()
@@ -274,7 +280,7 @@ namespace NanoleafAPI_Tests
             while (args == null)
                 await Task.Delay(1);
             Assert.That(args.IP, Is.EqualTo(IP));
-            Assert.That(args.LayoutEvent.GlobalOrientation, Is.EqualTo(120));
+            Assert.That(args.LayoutEvents.Events.First(e => e.Attribute == EAttribute_LayoutEvent.GlobalOrientation).GlobalOrientation, Is.EqualTo(120));
             args = null;
 
             await Task.Delay(500);
@@ -283,7 +289,7 @@ namespace NanoleafAPI_Tests
             while (args == null)
                 await Task.Delay(1);
             Assert.That(args.IP, Is.EqualTo(IP));
-            Assert.That(args.LayoutEvent.GlobalOrientation, Is.EqualTo(270));
+            Assert.That(args.LayoutEvents.Events.First(e => e.Attribute == EAttribute_LayoutEvent.GlobalOrientation).GlobalOrientation, Is.EqualTo(270));
             args = null;
 
             await Task.Delay(500);
@@ -292,7 +298,7 @@ namespace NanoleafAPI_Tests
             while (args == null)
                 await Task.Delay(1);
             Assert.That(args.IP, Is.EqualTo(IP));
-            Assert.That(args.LayoutEvent.GlobalOrientation, Is.Zero);
+            Assert.That(args.LayoutEvents.Events.First(e => e.Attribute == EAttribute_LayoutEvent.GlobalOrientation).GlobalOrientation, Is.Zero);
             args = null;
         }
 

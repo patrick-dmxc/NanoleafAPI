@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class PanelPosition
+    public struct PanelPosition
     {
         public enum EShapeType
         {
@@ -24,20 +24,24 @@ namespace NanoleafAPI
             ControllerCap = 19,
             PowerConnector = 20
         }
-        [JsonProperty("panelId")]
-        public int PanelId { get; set; }
 
-        [JsonProperty("x")]
-        public int X { get; set; }
+        [JsonPropertyName("panelId")]
+        public int PanelId { get; }
 
-        [JsonProperty("Y")]
-        public int Y { get; set; }
+        [JsonPropertyName("x")]
+        public float X { get; }
 
-        [JsonProperty("o")]
-        public int Orientation { get; set; }
+        [JsonPropertyName("Y")]
+        public float Y { get; }
 
-        [JsonProperty("shapeType")]
-        public EShapeType ShapeType { get; set; }
+        [JsonPropertyName("o")]
+        public float Orientation { get; }
+
+        [JsonPropertyName("shapeType")]
+        public EShapeType ShapeType { get; }
+
+        [JsonConstructor]
+        public PanelPosition(int panelId, float x, float y, float orientation, EShapeType shapeType) => (PanelId, X, Y, Orientation, ShapeType) = (panelId, x, y, orientation, shapeType);
 
         public override string ToString()
         {

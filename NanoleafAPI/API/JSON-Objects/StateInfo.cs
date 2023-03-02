@@ -1,17 +1,20 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class StateInfo
+    public struct StateInfo
     {
-        [JsonProperty("value")]
-        public ushort Value { get; set; }
+        [JsonPropertyName("value")]
+        public float Value { get; }
 
-        [JsonProperty("min")]
-        public int Min { get; set; }
+        [JsonPropertyName("min")]
+        public float Min { get; }
 
-        [JsonProperty("max")]
-        public int Max { get; set; }
+        [JsonPropertyName("max")]
+        public float Max { get; }
+
+        [JsonConstructor]
+        public StateInfo(float value, float min, float max) => (Value, Min, Max) = (value,min,max);
 
         public override string ToString()
         {

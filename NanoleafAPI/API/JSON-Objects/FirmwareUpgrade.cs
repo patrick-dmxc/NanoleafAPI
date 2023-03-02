@@ -1,14 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class FirmwareUpgrade
+    public struct FirmwareUpgrade
     {
-        [JsonProperty("firmwareAvailability")]
-        public bool FirmwareAvailability { get; set; }
+        [JsonPropertyName("firmwareAvailability")]
+        public bool FirmwareAvailability { get; }
 
-        [JsonProperty("newFirmwareVersion")]
-        public string? NewFirmwareVersion { get; set; }
+        [JsonPropertyName("newFirmwareVersion")]
+        public string? NewFirmwareVersion { get; }
+
+        [JsonConstructor]
+        public FirmwareUpgrade(bool firmwareAvailability, string? newFirmwareVersion) => (FirmwareAvailability, NewFirmwareVersion) = (firmwareAvailability, newFirmwareVersion);
 
         public override string ToString()
         {

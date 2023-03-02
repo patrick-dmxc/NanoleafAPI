@@ -1,16 +1,16 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class PanelLayout
+    public struct PanelLayout
     {
-#pragma warning disable CS8618
-        [JsonProperty("globalOrientation")]
-        public StateInfo GlobalOrientation { get; set; }
+        [JsonPropertyName("globalOrientation")]
+        public StateInfo GlobalOrientation { get; }
 
-        [JsonProperty("layout")]
+        [JsonPropertyName("layout")]
+        public Layout Layout { get; }
 
-        public Layout Layout { get; set; }
-#pragma warning restore CS8618
+        [JsonConstructor]
+        public PanelLayout(StateInfo globalOrientation, Layout layout) => (GlobalOrientation, Layout) = (globalOrientation, layout);
     }
 }

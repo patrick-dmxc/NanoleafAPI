@@ -3,11 +3,11 @@
     public class LayoutEventArgs : EventArgs
     {
         public readonly string IP;
-        public readonly LayoutEvent LayoutEvent;
-        public LayoutEventArgs(string ip, LayoutEvent layoutEvent)
+        public readonly LayoutEvents LayoutEvents;
+        public LayoutEventArgs(string ip, LayoutEvents layoutEvents)
         {
             IP = ip;
-            LayoutEvent = layoutEvent;
+            LayoutEvents = layoutEvents;
         }
     }
 }

@@ -1,27 +1,28 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class EffectEvent
+    public struct EffectEvent
     {
-        [JsonProperty("attr")]
-        public int Attribute { get; set; }
-        [JsonProperty("value")]
-        public string? Value { get; set; }
+        [JsonPropertyName("attr")]
+        public int Attribute { get; }
+        [JsonPropertyName("value")]
+        public string? Value { get; }
+
+        [JsonConstructor]
+        public EffectEvent(int attribute, string? value) => (Attribute, Value) = (attribute, value);
         public override string ToString()
         {
             return $"Effect: {Value}";
         }
     }
 
-    public class EffectEvents
+    public struct EffectEvents
     {
-        [JsonProperty("events")]
-        public IEnumerable<EffectEvent> Events { get; set; }
+        [JsonPropertyName("events")]
+        public IReadOnlyList<EffectEvent> Events { get; }
 
-        public EffectEvents(IEnumerable<EffectEvent> events)
-        {
-            Events = events;
-        }
+        [JsonConstructor]
+        public EffectEvents(IReadOnlyList<EffectEvent> events) => (Events) = (events);
     }
 }

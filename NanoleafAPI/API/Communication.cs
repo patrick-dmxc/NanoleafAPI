@@ -1,22 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using RestSharp;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Security.Principal;
 using System.Text;
+using System.Text.Json;
 using Zeroconf;
 using static NanoleafAPI.TouchEvent;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Net.WebRequestMethods;
 
 namespace NanoleafAPI
 {
@@ -326,9 +319,9 @@ namespace NanoleafAPI
         }
 
         #region User
-        public static async Task<string?> AddUser(string ip, string port)
+        public static async Task<User?> AddUser(string ip, string port)
         {
-            string? result = null;
+            User? result = null;
             string address = createUrl(ip, port, "new");
             using (HttpClient hc = new HttpClient())
             {
@@ -340,14 +333,12 @@ namespace NanoleafAPI
 
                     if (response.StatusCode == HttpStatusCode.OK)
                     {
-                        var responseStrings = await response.Content.ReadAsStringAsync();
-                        var jObject = JObject.Parse(responseStrings);
-                        result = jObject["auth_token"]?.ToString();
-                        if (result != null)
-                        {
-                            result = result.Replace("\"", "");
-                            _logger?.LogDebug($"Received {nameof(AddUser)} response: {jObject}");
-                        }
+                        var content = await response.Content.ReadAsStringAsync();
+                        result = JsonSerializer.Deserialize<User>(content);
+                        if (result.HasValue)
+                            _logger?.LogDebug($"Received {nameof(AddUser)} response: {content}");
+                        else
+                            _logger?.LogDebug($"Received {nameof(AddUser)} response can't be Deserialized: {content}");
                     }
                     else
                         _logger?.LogDebug($"Received Response for {nameof(AddUser)}: {response}");
@@ -404,8 +395,8 @@ namespace NanoleafAPI
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        result = JsonConvert.DeserializeObject<AllPanelInfo>(content);
-                        if (result != null)
+                        result = JsonSerializer.Deserialize<AllPanelInfo?>(content);
+                        if (result.HasValue)
                             _logger?.LogDebug($"Received {nameof(GetAllPanelInfo)} response: {result}");
                         else
                             _logger?.LogDebug($"Received {nameof(GetAllPanelInfo)} response can't be Deserialized: {content}");
@@ -440,8 +431,9 @@ namespace NanoleafAPI
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        result = JsonConvert.DeserializeObject<StateOnOff>(content)?.On;
-                        if (result != null)
+                        var state = JsonSerializer.Deserialize<StateOnOff?>(content);
+                        result = state?.On;
+                        if (result.HasValue)
                             _logger?.LogDebug($"Received {nameof(GetStateOnOff)} response: {result}");
                         else
                             _logger?.LogDebug($"Received {nameof(GetStateOnOff)} response can't be Deserialized: {content}");
@@ -483,9 +475,9 @@ namespace NanoleafAPI
         }
         #endregion
         #region Brightness
-        public static async Task<ushort?> GetStateBrightness(string ip, string port, string auth_token)
+        public static async Task<float?> GetStateBrightness(string ip, string port, string auth_token)
         {
-            ushort? result = null;
+            float? result = null;
             string address = createUrl(ip, port, auth_token, "state/brightness");
             using (HttpClient hc = new HttpClient())
             {
@@ -496,8 +488,9 @@ namespace NanoleafAPI
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        result = JsonConvert.DeserializeObject<StateInfo>(content)?.Value;
-                        if (result != null)
+                        var state = JsonSerializer.Deserialize<StateInfo?>(content);
+                        result = state?.Value;
+                        if (result.HasValue)
                             _logger?.LogDebug($"Received {nameof(GetStateBrightness)}: {result}");
                         else
                             _logger?.LogDebug($"Received {nameof(GetStateBrightness)} response can't be Deserialized: {content}");
@@ -516,15 +509,15 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static async Task<bool?> SetStateBrightness(string ip, string port, string auth_token, ushort value, ushort duration = 0)
+        public static async Task<bool?> SetStateBrightness(string ip, string port, string auth_token, float value, float duration = 0)
         {
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
             string? contentString = null;
-            if (duration == 0)
-                contentString = "{\"brightness\": {\"value\": " + value + "}}";
-            else
-                contentString = "{\"brightness\": {\"value\": " + value + ", \"duration\": " + duration + "}}";
+            //if (duration == 0)
+            //    contentString = "{\"brightness\": {\"value\": " + value + "}}";
+            //else
+            contentString = "{\"brightness\": {\"value\": " + value + ", \"duration\": " + duration + "}}";
             try
             {
                 _logger?.LogDebug($"Request {nameof(SetStateBrightness)} for \"{ip}\"");
@@ -540,7 +533,7 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static async Task<bool?> SetStateBrightnessIncrement(string ip, string port, string auth_token, short value)
+        public static async Task<bool?> SetStateBrightnessIncrement(string ip, string port, string auth_token, float value)
         {
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
@@ -562,9 +555,9 @@ namespace NanoleafAPI
         }
         #endregion
         #region Hue
-        public static async Task<ushort?> GetStateHue(string ip, string port, string auth_token)
+        public static async Task<float?> GetStateHue(string ip, string port, string auth_token)
         {
-            ushort? result = null;
+            float? result = null;
             string address = createUrl(ip, port, auth_token, "state/hue");
             using (HttpClient hc = new HttpClient())
             {
@@ -575,8 +568,9 @@ namespace NanoleafAPI
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        result = JsonConvert.DeserializeObject<StateInfo>(content)?.Value;
-                        if (result != null)
+                        var state = JsonSerializer.Deserialize<StateInfo?>(content);
+                        result = state?.Value;
+                        if (result.HasValue)
                             _logger?.LogDebug($"Received {nameof(GetStateHue)}: {result}");
                         else
                             _logger?.LogDebug($"Received {nameof(GetStateHue)} response can't be Deserialized: {content}");
@@ -595,7 +589,7 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static async Task<bool?> SetStateHue(string ip, string port, string auth_token, ushort value)
+        public static async Task<bool?> SetStateHue(string ip, string port, string auth_token, float value)
         {
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
@@ -615,7 +609,7 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static async Task<bool?> SetStateHueIncrement(string ip, string port, string auth_token, short value)
+        public static async Task<bool?> SetStateHueIncrement(string ip, string port, string auth_token, float value)
         {
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
@@ -637,9 +631,9 @@ namespace NanoleafAPI
         }
         #endregion
         #region Saturation
-        public static async Task<ushort?> GetStateSaturation(string ip, string port, string auth_token)
+        public static async Task<float?> GetStateSaturation(string ip, string port, string auth_token)
         {
-            ushort? result = null;
+            float? result = null;
             string address = createUrl(ip, port, auth_token, "state/sat");
             using (HttpClient hc = new HttpClient())
             {
@@ -650,8 +644,9 @@ namespace NanoleafAPI
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        result = JsonConvert.DeserializeObject<StateInfo>(content)?.Value;
-                        if (result != null)
+                        var state = JsonSerializer.Deserialize<StateInfo?>(content);
+                        result = state?.Value;
+                        if (result.HasValue)
                             _logger?.LogDebug($"Received {nameof(GetStateSaturation)}: {result}");
                         else
                             _logger?.LogDebug($"Received {nameof(GetStateSaturation)} response can't be Deserialized: {content}");
@@ -670,7 +665,7 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static async Task<bool?> SetStateSaturation(string ip, string port, string auth_token, ushort value)
+        public static async Task<bool?> SetStateSaturation(string ip, string port, string auth_token, float value)
         {
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
@@ -690,7 +685,7 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static async Task<bool?> SetStateSaturationIncrement(string ip, string port, string auth_token, short value)
+        public static async Task<bool?> SetStateSaturationIncrement(string ip, string port, string auth_token, float value)
         {
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
@@ -712,9 +707,9 @@ namespace NanoleafAPI
         }
         #endregion
         #region ColorTemperature
-        public static async Task<ushort?> GetStateColorTemperature(string ip, string port, string auth_token)
+        public static async Task<float?> GetStateColorTemperature(string ip, string port, string auth_token)
         {
-            ushort? result = null;
+            float? result = null;
             string address = createUrl(ip, port, auth_token, "state/ct");
             using (HttpClient hc = new HttpClient())
             {
@@ -725,8 +720,9 @@ namespace NanoleafAPI
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        result = JsonConvert.DeserializeObject<StateInfo>(content)?.Value;
-                        if (result != null)
+                        var state = JsonSerializer.Deserialize<StateInfo?>(content);
+                        result = state?.Value;
+                        if (result.HasValue)
                             _logger?.LogDebug($"Received {nameof(GetStateColorTemperature)}: {result}");
                         else
                             _logger?.LogDebug($"Received {nameof(GetStateColorTemperature)} response can't be Deserialized: {content}");
@@ -745,7 +741,7 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static async Task<bool?> SetStateColorTemperature(string ip, string port, string auth_token, ushort value)
+        public static async Task<bool?> SetStateColorTemperature(string ip, string port, string auth_token, float value)
         {
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
@@ -765,7 +761,7 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static async Task<bool?> SetStateColorTemperatureIncrement(string ip, string port, string auth_token, short value)
+        public static async Task<bool?> SetStateColorTemperatureIncrement(string ip, string port, string auth_token, float value)
         {
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
@@ -910,7 +906,7 @@ namespace NanoleafAPI
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        var deserialized = JsonConvert.DeserializeObject<IEnumerable<string>>(content);
+                        var deserialized = JsonSerializer.Deserialize<IReadOnlyList<string>>(content);
                         if (deserialized != null)
                         {
                             _logger?.LogDebug($"Received {nameof(GetEffectList)} response: {content}");
@@ -935,9 +931,9 @@ namespace NanoleafAPI
         #endregion
 
         #region PanelLayout
-        public static async Task<ushort?> GetPanelLayoutGlobalOrientation(string ip, string port, string auth_token)
+        public static async Task<float?> GetPanelLayoutGlobalOrientation(string ip, string port, string auth_token)
         {
-            ushort? result = null;
+            float? result = null;
             string address = createUrl(ip, port, auth_token, "panelLayout/globalOrientation");
             using (HttpClient hc = new HttpClient())
             {
@@ -948,8 +944,9 @@ namespace NanoleafAPI
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        result = JsonConvert.DeserializeObject<StateInfo>(content)?.Value;
-                        if (result != null)
+                        var state = JsonSerializer.Deserialize<StateInfo?>(content);
+                        result = state?.Value;
+                        if (result.HasValue)
                             _logger?.LogDebug($"Received {nameof(GetPanelLayoutGlobalOrientation)}: {result}");
                         else
                             _logger?.LogDebug($"Received {nameof(GetPanelLayoutGlobalOrientation)} response can't be Deserialized: {content}");
@@ -968,7 +965,7 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static async Task<bool?> SetPanelLayoutGlobalOrientation(string ip, string port, string auth_token, ushort value)
+        public static async Task<bool?> SetPanelLayoutGlobalOrientation(string ip, string port, string auth_token, float value)
         {
             bool? result = false;
             string address = createUrl(ip, port, auth_token, "panelLayout");
@@ -1001,8 +998,8 @@ namespace NanoleafAPI
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        result = JsonConvert.DeserializeObject<Layout>(content);
-                        if (result != null)
+                        result = JsonSerializer.Deserialize<Layout?>(content);
+                        if (result.HasValue)
                             _logger?.LogDebug($"Received {nameof(GetPanelLayoutLayout)}: {result}");
                         else
                             _logger?.LogDebug($"Received {nameof(GetPanelLayoutLayout)} response can't be Deserialized: {content}");
@@ -1091,8 +1088,8 @@ namespace NanoleafAPI
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        result = JsonConvert.DeserializeObject<FirmwareUpgrade>(content);
-                        if (result != null)
+                        result = JsonSerializer.Deserialize<FirmwareUpgrade?>(content);
+                        if (result.HasValue)
                             _logger?.LogDebug($"Received {nameof(GetFirmwareUpgrade)}: {result}");
                         else
                             _logger?.LogDebug($"Received {nameof(GetFirmwareUpgrade)} response can't be Deserialized: {content}");
@@ -1294,7 +1291,7 @@ namespace NanoleafAPI
                         if (response?.StatusCode == HttpStatusCode.OK)
                         {
                             if (!string.IsNullOrWhiteSpace(response.Content))
-                                result = JsonConvert.DeserializeObject<ExternalControlConnectionInfo>(response.Content);
+                                result = JsonSerializer.Deserialize<ExternalControlConnectionInfo?>(response.Content);
                         }
                         else
                             _logger?.LogDebug($"Received Response for {nameof(SetExternalControlStreaming)}: {response}");
@@ -1308,14 +1305,14 @@ namespace NanoleafAPI
                     default:
                         if (response?.StatusCode == HttpStatusCode.NoContent)
                         {
-                            result = new ExternalControlConnectionInfo() { StreamIPAddress = ip, StreamPort = 60222, StreamProtocol = "udp" };
+                            result = new ExternalControlConnectionInfo(ip, 60222, "udp");
                         }
                         else
                             _logger?.LogDebug($"Received Response for {nameof(SetExternalControlStreaming)}: {response}");
                         break;
                 }
 
-                if (result != null)
+                if (result.HasValue)
                     _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)}: {result}");
                 else
                     _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)} response can't be Deserialized: {response?.Content}");
@@ -1367,9 +1364,6 @@ namespace NanoleafAPI
         {
             try
             {
-                if (_externalControlConnectionInfo == null)
-                    return;
-
                 if (udpCommandSocket == null)
                     udpCommandSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
@@ -1433,9 +1427,11 @@ namespace NanoleafAPI
 
         private static int _touchEventsPort = -1;
         private static Thread? eventListenerThread = null;
+        private static Thread? eventListenerThreadTouch = null;
         private static Dictionary<string, TouchEvent> lastTouchEvent = new Dictionary<string, TouchEvent>();
         private static Thread? eventCleanLoop = null;
         private static bool eventListenerThreadRunning = false;
+        private static bool eventListenerThreadRunningTouch = false;
         private static bool eventCleanLoopThreadRunning = false;
 
         public static void StartEventListener()
@@ -1479,12 +1475,12 @@ namespace NanoleafAPI
                 eventCleanLoop.Start();
             }
 
-            if (eventListenerThread != null)
+            if (eventListenerThreadTouch != null)
                 return;
 
-            eventListenerThread = new Thread(new ParameterizedThreadStart(async (o) =>
+            eventListenerThreadTouch = new Thread(new ParameterizedThreadStart(async (o) =>
             {
-                eventListenerThreadRunning = true;
+                eventListenerThreadRunningTouch = true;
                 try
                 {
                     using (var client = new UdpClient(NextFreePort()))
@@ -1492,7 +1488,7 @@ namespace NanoleafAPI
                         var endpoint = (IPEndPoint?)client.Client.LocalEndPoint;
                         if(endpoint == null)
                         {
-                            _logger?.LogError("Endpoint in EventlistenerThread is null");
+                            _logger?.LogError("Endpoint in eventListenerThreadTouch is null");
                             return;
                         }
                         _touchEventsPort = endpoint.Port;
@@ -1518,7 +1514,7 @@ namespace NanoleafAPI
                             {
 
                             }
-                        } while (eventListenerThreadRunning);
+                        } while (eventListenerThreadRunningTouch);
                     }
                 }
                 catch (Exception)
@@ -1526,10 +1522,10 @@ namespace NanoleafAPI
 
                 }
             }));
-            eventListenerThread.Name = $"Nanoleaf TouchEventListener";
-            eventListenerThread.Priority = ThreadPriority.BelowNormal;
-            eventListenerThread.IsBackground = true;
-            eventListenerThread.Start();
+            eventListenerThreadTouch.Name = $"Nanoleaf TouchEventListener";
+            eventListenerThreadTouch.Priority = ThreadPriority.BelowNormal;
+            eventListenerThreadTouch.IsBackground = true;
+            eventListenerThreadTouch.Start();
 
             bool IsFree(int port)
             {
@@ -1550,8 +1546,9 @@ namespace NanoleafAPI
         }
         public static void StopEventListener()
         {
-            eventCleanLoopThreadRunning = eventListenerThreadRunning = false;
+            eventCleanLoopThreadRunning = eventListenerThreadRunningTouch = eventListenerThreadRunning = false;
             eventListenerThread = null;
+            eventListenerThreadTouch = null;
             eventCleanLoop = null;
         }
 
@@ -1633,39 +1630,19 @@ namespace NanoleafAPI
             switch (id)
             {
                 case 1:
-                    var stateEvents = JsonConvert.DeserializeObject<StateEvents>(eventData);
-                    if (stateEvents == null)
-                    {
-                        _logger?.LogWarning($"Can't Deserialize {nameof(StateEvents)} Event-Data: {eventData}");
-                        break;
-                    }
-                    StaticOnStateEvent?.InvokeFailSafe(ip, new StateEventArgs(ip, (StateEvents)stateEvents));
+                    var stateEvents = JsonSerializer.Deserialize<StateEvents>(eventData);
+                    StaticOnStateEvent?.InvokeFailSafe(ip, new StateEventArgs(ip, stateEvents));
                     break;
                 case 2:
-                    var layoutEvent = JsonConvert.DeserializeObject<LayoutEvent>(eventData, LayoutEventConverter.Instance);
-                    if (layoutEvent == null)
-                    {
-                        _logger?.LogWarning($"Can't Deserialize {nameof(LayoutEvent)} Event-Data: {eventData}");
-                        break;
-                    }
-                    StaticOnLayoutEvent?.InvokeFailSafe(ip, new LayoutEventArgs(ip, layoutEvent));
+                    var layoutEvents = JsonSerializer.Deserialize<LayoutEvents>(eventData);
+                    StaticOnLayoutEvent?.InvokeFailSafe(ip, new LayoutEventArgs(ip, layoutEvents));
                     break;
                 case 3:
-                    var effectEvent = JsonConvert.DeserializeObject<EffectEvents>(eventData);
-                    if (effectEvent == null)
-                    {
-                        _logger?.LogWarning($"Can't Deserialize {nameof(EffectEvents)} Event-Data: {eventData}");
-                        break;
-                    }
+                    var effectEvent = JsonSerializer.Deserialize<EffectEvents>(eventData);
                     StaticOnEffectEvent?.InvokeFailSafe(ip, new EffectEventArgs(ip, effectEvent));
                     break;
                 case 4:
-                    var gestureEvents = JsonConvert.DeserializeObject<GestureEvents>(eventData);
-                    if (gestureEvents == null)
-                    {
-                        _logger?.LogWarning($"Can't Deserialize {nameof(GestureEvents)} Event-Data: {eventData}");
-                        break;
-                    }
+                    var gestureEvents = JsonSerializer.Deserialize<GestureEvents>(eventData);
                     StaticOnGestureEvent?.InvokeFailSafe(ip, new GestureEventArgs(ip, gestureEvents));
                     break;
             }
@@ -1691,8 +1668,7 @@ namespace NanoleafAPI
             discoverSSDPTask = null;
             discoverySSDPTaskRunning = false;
 
-            eventListenerThread = null;
-            eventCleanLoop = null;
+            StopEventListener();
 
             tokenSource = new CancellationTokenSource();
             token = tokenSource.Token;

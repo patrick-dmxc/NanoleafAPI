@@ -1,18 +1,19 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class ExternalControlConnectionInfo
+    public struct ExternalControlConnectionInfo
     {
-        [JsonProperty("streamControlIpAddr")]
-#pragma warning disable CS8618
-        public string StreamIPAddress { get; set; }
+        [JsonPropertyName("streamControlIpAddr")]
+        public string StreamIPAddress { get;}
 
-        [JsonProperty("streamControlPort")]
-        public int StreamPort { get; set; }
+        [JsonPropertyName("streamControlPort")]
+        public int StreamPort { get; }
 
-        [JsonProperty("streamControlProtocol")]
-        public string StreamProtocol { get; set; }
-#pragma warning restore CS8618
+        [JsonPropertyName("streamControlProtocol")]
+        public string StreamProtocol { get; }
+
+        [JsonConstructor]
+        public ExternalControlConnectionInfo(string streamIPAddress, int streamPort, string streamProtocol) => (StreamIPAddress, StreamPort, StreamProtocol) = (streamIPAddress, streamPort, streamProtocol);
     }
 }

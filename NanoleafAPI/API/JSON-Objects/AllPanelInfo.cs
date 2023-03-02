@@ -1,37 +1,38 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class AllPanelInfo
+    public struct AllPanelInfo
     {
-#pragma warning disable CS8618
-        [JsonProperty("name")]
-        public string Name { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; }
 
-        [JsonProperty("serialNo")]
-        public string SerialNumber { get; set; }
+        [JsonPropertyName("serialNo")]
+        public string SerialNumber { get; }
 
-        [JsonProperty("manufacturer")]
-        public string Manufacturer { get; set; }
+        [JsonPropertyName("manufacturer")]
+        public string Manufacturer { get; }
 
-        [JsonProperty("firmwareVersion")]
-        public string FirmwareVersion { get; set; }
+        [JsonPropertyName("firmwareVersion")]
+        public string FirmwareVersion { get; }
 
-        [JsonProperty("hardwareVersion")]
-        public string HardwareVersion { get; set; }
+        [JsonPropertyName("hardwareVersion")]
+        public string HardwareVersion { get; }
 
-        [JsonProperty("model")]
-        public string Model { get; set; }
+        [JsonPropertyName("model")]
+        public string Model { get; }
 
-        [JsonProperty("effects")]
-        public Effects Effects { get; set; }
+        [JsonPropertyName("effects")]
+        public Effects Effects { get; }
 
-        [JsonProperty("panelLayout")]
-        public PanelLayout PanelLayout { get; set; }
+        [JsonPropertyName("panelLayout")]
+        public PanelLayout PanelLayout { get; }
 
-        [JsonProperty("state")]
-        public States State { get; set; }
-#pragma warning restore CS8618
+        [JsonPropertyName("state")]
+        public States State { get; }
+
+        [JsonConstructor]
+        public AllPanelInfo(string name, string serialNumber, string manufacturer, string firmwareVersion, string hardwareVersion, string model, Effects effects, PanelLayout panelLayout, States state) => (Name, SerialNumber, Manufacturer, FirmwareVersion, HardwareVersion, Model, Effects, PanelLayout, State) = (name, serialNumber, manufacturer, firmwareVersion, hardwareVersion, model, effects, panelLayout, state);
 
         public override string ToString()
         {

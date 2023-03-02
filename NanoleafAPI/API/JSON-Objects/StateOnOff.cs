@@ -1,11 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class StateOnOff
+    public struct StateOnOff
     {
-        [JsonProperty("value")]
-        public bool On { get; set; }
+        [JsonPropertyName("value")]
+        public bool On { get; }
+        [JsonConstructor]
+        public StateOnOff(bool on) => (On) = (on);
         public override string ToString()
         {
             if (On)

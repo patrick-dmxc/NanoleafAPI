@@ -1,7 +1,4 @@
 using NanoleafAPI;
-using Newtonsoft.Json.Linq;
-using System.Net;
-using static NanoleafAPI.StateEvent;
 
 namespace NanoleafAPI_Tests
 {
@@ -15,8 +12,6 @@ namespace NanoleafAPI_Tests
         public void Setup()
         {
             Tools.LoggerFactory = new TestLoggerFactory();
-
-
         }
         [Test]
         public async Task TestControler()
@@ -34,7 +29,6 @@ namespace NanoleafAPI_Tests
             });
             await Task.Delay(6000);
             Assert.That(c.StreamingStarted, Is.True, "Stream");
-
         }
     }
 }

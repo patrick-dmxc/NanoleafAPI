@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Reflection.Metadata.Ecma335;
-using static NanoleafAPI.PanelPosition;
+﻿using static NanoleafAPI.PanelPosition;
 
 namespace NanoleafAPI
 {
@@ -8,8 +6,8 @@ namespace NanoleafAPI
     {
         public string IP { get; private set; }
         public int ID { get; private set; }
-        private int x;
-        public int X
+        private float x;
+        public float X
         {
             get { return x; }
             private set
@@ -21,8 +19,8 @@ namespace NanoleafAPI
                 XChanged?.InvokeFailSafe(this, EventArgs.Empty);
             }
         }
-        private int y;
-        public int Y
+        private float y;
+        public float Y
         {
             get { return y; }
             private set
@@ -34,8 +32,8 @@ namespace NanoleafAPI
                 YChanged?.InvokeFailSafe(this, EventArgs.Empty);
             }
         }
-        private int orientation;
-        public int Orientation
+        private float orientation;
+        public float Orientation
         {
             get { return orientation; }
             private set
@@ -75,24 +73,6 @@ namespace NanoleafAPI
         public event EventHandler OrientationChanged;
 
 #pragma warning disable CS8618
-        public Panel(JToken json)
-        {
-#pragma warning disable CS8604
-#pragma warning disable CS8600
-#pragma warning disable CS8601
-            IP = (string)json[nameof(IP)];
-            ID = (int)json[nameof(ID)];
-            X = (int)json[nameof(X)];
-            Y = (int)json[nameof(Y)];
-            Orientation = (int)json[nameof(Orientation)];
-            Shape = (EShapeType)(int)json[nameof(Shape)];
-            SideLength = (double)json[nameof(SideLength)];
-#pragma warning restore CS8601
-#pragma warning restore CS8604
-#pragma warning restore CS8600
-            Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
-        }
-
         public Panel(string ip, PanelPosition pp)
         {
             IP = ip;
@@ -111,12 +91,18 @@ namespace NanoleafAPI
             if (!IP.Equals(e.IP))
                 return;
 
-            var pp = e.LayoutEvent.Layout?.PanelPositions?.FirstOrDefault(p => p.PanelId.Equals(ID));
-            if (pp != null)
+            foreach (var @event in e.LayoutEvents.Events)
             {
-                X = pp.X;
-                Y = pp.Y;
-                Orientation = pp.Orientation;
+                if (@event.Layout.HasValue)
+                {
+                    var pp = @event.Layout.Value.PanelPositions?.FirstOrDefault(p => p.PanelId.Equals(ID));
+                    if (pp.HasValue)
+                    {
+                        X = pp.Value.X;
+                        Y = pp.Value.Y;
+                        Orientation = pp.Value.Orientation;
+                    }
+                }
             }
         }
 

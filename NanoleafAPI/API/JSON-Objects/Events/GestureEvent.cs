@@ -1,13 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class GestureEvent
+    public struct GestureEvent
     {
-        [JsonProperty("gesture")]
-        public EGesture Gesture { get; set; }
-        [JsonProperty("panelId")]
-        public int PanelID { get; set; }
+        [JsonPropertyName("gesture")]
+        public EGesture Gesture { get; }
+        [JsonPropertyName("panelId")]
+        public int PanelID { get; }
         public enum EGesture
         {
             SingleTap,
@@ -17,20 +17,21 @@ namespace NanoleafAPI
             SwipeLeft,
             SwipeRight
         }
+
+        [JsonConstructor]
+        public GestureEvent(EGesture gesture, int panelID) => (Gesture, PanelID) = (gesture, panelID);
         public override string ToString()
         {
             return $"PanelID: {PanelID} Gesture: {Gesture}";
         }
     }
 
-    public class GestureEvents
+    public struct GestureEvents
     {
-        [JsonProperty("events")]
-        public IEnumerable<GestureEvent> Events { get; set; }
+        [JsonPropertyName("events")]
+        public IReadOnlyList<GestureEvent> Events { get; }
 
-        public GestureEvents(IEnumerable<GestureEvent> events)
-        {
-            Events = events;
-        }
+        [JsonConstructor]
+        public GestureEvents(IReadOnlyList<GestureEvent> events) => (Events) = (events);
     }
 }

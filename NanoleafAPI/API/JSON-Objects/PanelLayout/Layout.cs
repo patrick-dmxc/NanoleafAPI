@@ -1,16 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public class Layout
+    public struct Layout
     {
-#pragma warning disable CS8618
-        [JsonProperty("numPanels")]
-        public uint NumberOfPanels { get; set; }
+        [JsonPropertyName("numPanels")]
+        public uint NumberOfPanels { get; }
 
-        [JsonProperty("positionData")]
-        public IEnumerable<PanelPosition> PanelPositions { get; set; }
-#pragma warning restore CS8618
+        [JsonPropertyName("positionData")]
+        public IReadOnlyList<PanelPosition> PanelPositions { get; }
+
+        [JsonConstructor]
+        public Layout(uint numberOfPanels, IReadOnlyList<PanelPosition> panelPositions) => (NumberOfPanels, PanelPositions) = (numberOfPanels, panelPositions);
 
         public override string ToString()
         {
