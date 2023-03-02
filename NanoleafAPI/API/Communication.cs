@@ -1430,7 +1430,6 @@ namespace NanoleafAPI
         private static Thread? eventListenerThreadTouch = null;
         private static Dictionary<string, TouchEvent> lastTouchEvent = new Dictionary<string, TouchEvent>();
         private static Thread? eventCleanLoop = null;
-        private static bool eventListenerThreadRunning = false;
         private static bool eventListenerThreadRunningTouch = false;
         private static bool eventCleanLoopThreadRunning = false;
 
@@ -1546,7 +1545,7 @@ namespace NanoleafAPI
         }
         public static void StopEventListener()
         {
-            eventCleanLoopThreadRunning = eventListenerThreadRunningTouch = eventListenerThreadRunning = false;
+            eventCleanLoopThreadRunning = eventListenerThreadRunningTouch = false;
             eventListenerThread = null;
             eventListenerThreadTouch = null;
             eventCleanLoop = null;
