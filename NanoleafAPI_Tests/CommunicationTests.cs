@@ -333,5 +333,13 @@ namespace NanoleafAPI_Tests
             Assert.That(await Communication.GetRequerstAll(IP, PORT, AUTH_TOKEN), Is.Not.Null);
             await Task.Delay(5000);
         }
+        [Test]
+        public async Task TestRequestAll()
+        {
+            await Task.Delay(500);
+            Animations? a = await Communication.GetRequerstAll(IP, PORT, AUTH_TOKEN);
+            Assert.That(a.HasValue, Is.True);
+            await Task.Delay(5000);
+        }
     }
 }

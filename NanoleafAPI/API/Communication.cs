@@ -1111,9 +1111,9 @@ namespace NanoleafAPI
         #endregion
 
         #region Commands
-        public static async Task<string?> GetRequerstAll(string ip, string port, string auth_token)
+        public static async Task<Animations?> GetRequerstAll(string ip, string port, string auth_token)
         {
-            string? result = null;
+            Animations? result = null;
             string address = createUrl(ip, port, auth_token, "effects");
             string contentString = "{" + "\"write\":{ \"command\":\"requestAll\"} }";
             try
@@ -1123,7 +1123,8 @@ namespace NanoleafAPI
                 if (response?.StatusCode == HttpStatusCode.OK)
                 {
                     string? content = response.Content;
-                    result = content;//JsonConvert.DeserializeObject<Layout>(content);
+                    if (content != null)
+                        result = JsonSerializer.Deserialize<Animations?>(content);
                     if (result != null)
                         _logger?.LogDebug($"Received {nameof(GetRequerstAll)}: {result}");
                     else
