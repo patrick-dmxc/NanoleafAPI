@@ -2,24 +2,24 @@
 
 namespace NanoleafAPI
 {
-    public struct States
+    public readonly struct States
     {
         [JsonPropertyName("on")]
-        public StateOnOff On { get; }
+        public readonly StateOnOff On { get; }
         [JsonPropertyName("brightness")]
-        public StateInfo Brightness { get; }
+        public readonly StateInfo Brightness { get; }
 
         [JsonPropertyName("hue")]
-        public StateInfo Hue { get; }
+        public readonly StateInfo Hue { get; }
 
         [JsonPropertyName("sat")]
-        public StateInfo Saturation { get; }
+        public readonly StateInfo Saturation { get; }
 
         [JsonPropertyName("ct")]
-        public StateInfo ColorTemprature { get; }
+        public readonly StateInfo ColorTemprature { get; }
 
         [JsonPropertyName("colorMode")]
-        public string ColorMode { get; }
+        public readonly string ColorMode { get; }
 
         [JsonConstructor]
         public States(StateOnOff on, StateInfo brightness, StateInfo hue, StateInfo saturation, StateInfo colorTemprature, string colorMode) => (On, Brightness, Hue, Saturation, ColorTemprature, ColorMode) = (on, brightness, hue, saturation, colorTemprature, colorMode);

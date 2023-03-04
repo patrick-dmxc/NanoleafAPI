@@ -2,16 +2,16 @@
 
 namespace NanoleafAPI
 {
-    public struct ExternalControlConnectionInfo
+    public readonly struct ExternalControlConnectionInfo
     {
         [JsonPropertyName("streamControlIpAddr")]
-        public string StreamIPAddress { get;}
+        public readonly string StreamIPAddress { get;}
 
         [JsonPropertyName("streamControlPort")]
-        public int StreamPort { get; }
+        public readonly int StreamPort { get; }
 
         [JsonPropertyName("streamControlProtocol")]
-        public string StreamProtocol { get; }
+        public readonly string StreamProtocol { get; }
 
         [JsonConstructor]
         public ExternalControlConnectionInfo(string streamIPAddress, int streamPort, string streamProtocol) => (StreamIPAddress, StreamPort, StreamProtocol) = (streamIPAddress, streamPort, streamProtocol);

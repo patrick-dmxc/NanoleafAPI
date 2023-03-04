@@ -2,16 +2,16 @@
 
 namespace NanoleafAPI
 {
-    public struct StateInfo
+    public readonly struct StateInfo
     {
         [JsonPropertyName("value")]
-        public float Value { get; }
+        public readonly float Value { get; }
 
         [JsonPropertyName("min")]
-        public float Min { get; }
+        public readonly float Min { get; }
 
         [JsonPropertyName("max")]
-        public float Max { get; }
+        public readonly float Max { get; }
 
         [JsonConstructor]
         public StateInfo(float value, float min, float max) => (Value, Min, Max) = (value,min,max);

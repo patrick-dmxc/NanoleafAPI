@@ -2,13 +2,13 @@
 
 namespace NanoleafAPI
 {
-    public struct Layout
+    public readonly struct Layout
     {
         [JsonPropertyName("numPanels")]
-        public uint NumberOfPanels { get; }
+        public readonly uint NumberOfPanels { get; }
 
         [JsonPropertyName("positionData")]
-        public IReadOnlyList<PanelPosition> PanelPositions { get; }
+        public readonly IReadOnlyList<PanelPosition> PanelPositions { get; }
 
         [JsonConstructor]
         public Layout(uint numberOfPanels, IReadOnlyList<PanelPosition> panelPositions) => (NumberOfPanels, PanelPositions) = (numberOfPanels, panelPositions);

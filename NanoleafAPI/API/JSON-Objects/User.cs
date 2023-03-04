@@ -2,10 +2,10 @@
 
 namespace NanoleafAPI
 {
-    public struct User
+    public readonly struct User
     {
         [JsonPropertyName("auth_token")]
-        public string AuthToken { get; }
+        public readonly string AuthToken { get; }
         [JsonConstructor]
         public User(string authToken) => (AuthToken) = (authToken);
         public override string ToString()

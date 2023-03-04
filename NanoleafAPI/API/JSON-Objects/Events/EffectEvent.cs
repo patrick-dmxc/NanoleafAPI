@@ -2,12 +2,12 @@
 
 namespace NanoleafAPI
 {
-    public struct EffectEvent
+    public readonly struct EffectEvent
     {
         [JsonPropertyName("attr")]
-        public int Attribute { get; }
+        public readonly int Attribute { get; }
         [JsonPropertyName("value")]
-        public string? Value { get; }
+        public readonly string? Value { get; }
 
         [JsonConstructor]
         public EffectEvent(int attribute, string? value) => (Attribute, Value) = (attribute, value);

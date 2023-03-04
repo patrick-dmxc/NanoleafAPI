@@ -3,17 +3,17 @@ using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public struct LayoutEvent
+    public readonly struct LayoutEvent
     {
         [JsonPropertyName("attr")]
-        public EAttribute Attribute { get; }
+        public readonly EAttribute Attribute { get; }
 
         [JsonPropertyName("value")]
-        public JsonElement Value { get; }
+        public readonly JsonElement Value { get; }
 
-        public Layout? Layout { get; } = null;
+        public readonly Layout? Layout { get; } = null;
 
-        public float? GlobalOrientation { get; } = null;
+        public readonly float? GlobalOrientation { get; } = null;
 
         public enum EAttribute
         {

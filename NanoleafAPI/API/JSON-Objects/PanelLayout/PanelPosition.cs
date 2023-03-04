@@ -2,7 +2,7 @@
 
 namespace NanoleafAPI
 {
-    public struct PanelPosition
+    public readonly struct PanelPosition
     {
         public enum EShapeType
         {
@@ -26,19 +26,19 @@ namespace NanoleafAPI
         }
 
         [JsonPropertyName("panelId")]
-        public int PanelId { get; }
+        public readonly int PanelId { get; }
 
         [JsonPropertyName("x")]
-        public float X { get; }
+        public readonly float X { get; }
 
         [JsonPropertyName("Y")]
-        public float Y { get; }
+        public readonly float Y { get; }
 
         [JsonPropertyName("o")]
-        public float Orientation { get; }
+        public readonly float Orientation { get; }
 
         [JsonPropertyName("shapeType")]
-        public EShapeType ShapeType { get; }
+        public readonly EShapeType ShapeType { get; }
 
         [JsonConstructor]
         public PanelPosition(int panelId, float x, float y, float orientation, EShapeType shapeType) => (PanelId, X, Y, Orientation, ShapeType) = (panelId, x, y, orientation, shapeType);

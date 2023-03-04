@@ -2,13 +2,13 @@
 
 namespace NanoleafAPI
 {
-    public struct Effects
+    public readonly struct Effects
     {
         [JsonPropertyName("effectsList")]
-        public IReadOnlyList<string> List { get; }
+        public readonly IReadOnlyList<string> List { get; }
 
         [JsonPropertyName("select")]
-        public string Selected { get; }
+        public readonly string Selected { get; }
 
         [JsonConstructor]
         public Effects(string selected, IReadOnlyList<string> list) => (Selected, List) = (selected, list);

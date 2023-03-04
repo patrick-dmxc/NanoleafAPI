@@ -2,13 +2,13 @@
 
 namespace NanoleafAPI
 {
-    public struct PanelLayout
+    public readonly struct PanelLayout
     {
         [JsonPropertyName("globalOrientation")]
-        public StateInfo GlobalOrientation { get; }
+        public readonly StateInfo GlobalOrientation { get; }
 
         [JsonPropertyName("layout")]
-        public Layout Layout { get; }
+        public readonly Layout Layout { get; }
 
         [JsonConstructor]
         public PanelLayout(StateInfo globalOrientation, Layout layout) => (GlobalOrientation, Layout) = (globalOrientation, layout);

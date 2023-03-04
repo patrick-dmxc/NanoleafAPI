@@ -2,12 +2,12 @@
 
 namespace NanoleafAPI
 {
-    public struct GestureEvent
+    public readonly struct GestureEvent
     {
         [JsonPropertyName("gesture")]
-        public EGesture Gesture { get; }
+        public readonly EGesture Gesture { get; }
         [JsonPropertyName("panelId")]
-        public int PanelID { get; }
+        public readonly int PanelID { get; }
         public enum EGesture
         {
             SingleTap,

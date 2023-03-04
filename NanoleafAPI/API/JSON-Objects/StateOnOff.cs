@@ -2,10 +2,10 @@
 
 namespace NanoleafAPI
 {
-    public struct StateOnOff
+    public readonly struct StateOnOff
     {
         [JsonPropertyName("value")]
-        public bool On { get; }
+        public readonly bool On { get; }
         [JsonConstructor]
         public StateOnOff(bool on) => (On) = (on);
         public override string ToString()

@@ -7,7 +7,7 @@
         public readonly string Name;
         public readonly string ID;
         public readonly EDeviceType DeviceTyp;
-        public DiscoveredDevice(string ip, string port, string name, string id, EDeviceType deviceType) : this()
+        public DiscoveredDevice(in string ip, in string port, in string name, in string id, in EDeviceType deviceType) : this()
         {
             IP = ip;
             Port = port;

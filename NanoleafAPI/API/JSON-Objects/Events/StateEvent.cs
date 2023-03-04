@@ -3,18 +3,18 @@ using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public struct StateEvent
+    public readonly struct StateEvent
     {
         [JsonPropertyName("attr")]
-        public EAttribute Attribute { get; }
+        public readonly EAttribute Attribute { get; }
         [JsonPropertyName("value")]
-        public JsonElement Value { get; }
-        public bool? On { get; } = null;
-        public float? Brightness { get; } = null;
-        public float? Hue { get; } = null;
-        public float? Saturation { get; } = null;
-        public float? CCT { get; } = null;
-        public string? ColorMode { get; } = null;
+        public readonly JsonElement Value { get; }
+        public readonly bool? On { get; } = null;
+        public readonly float? Brightness { get; } = null;
+        public readonly float? Hue { get; } = null;
+        public readonly float? Saturation { get; } = null;
+        public readonly float? CCT { get; } = null;
+        public readonly string? ColorMode { get; } = null;
         public enum EAttribute
         {
             UNKNOWN,

@@ -2,34 +2,34 @@
 
 namespace NanoleafAPI
 {
-    public struct AllPanelInfo
+    public readonly struct AllPanelInfo
     {
         [JsonPropertyName("name")]
-        public string Name { get; }
+        public readonly string Name { get; }
 
         [JsonPropertyName("serialNo")]
-        public string SerialNumber { get; }
+        public readonly string SerialNumber { get; }
 
         [JsonPropertyName("manufacturer")]
-        public string Manufacturer { get; }
+        public readonly string Manufacturer { get; }
 
         [JsonPropertyName("firmwareVersion")]
-        public string FirmwareVersion { get; }
+        public readonly string FirmwareVersion { get; }
 
         [JsonPropertyName("hardwareVersion")]
-        public string HardwareVersion { get; }
+        public readonly string HardwareVersion { get; }
 
         [JsonPropertyName("model")]
-        public string Model { get; }
+        public readonly string Model { get; }
 
         [JsonPropertyName("effects")]
-        public Effects Effects { get; }
+        public readonly Effects Effects { get; }
 
         [JsonPropertyName("panelLayout")]
-        public PanelLayout PanelLayout { get; }
+        public readonly PanelLayout PanelLayout { get; }
 
         [JsonPropertyName("state")]
-        public States State { get; }
+        public readonly States State { get; }
 
         [JsonConstructor]
         public AllPanelInfo(string name, string serialNumber, string manufacturer, string firmwareVersion, string hardwareVersion, string model, Effects effects, PanelLayout panelLayout, States state) => (Name, SerialNumber, Manufacturer, FirmwareVersion, HardwareVersion, Model, Effects, PanelLayout, State) = (name, serialNumber, manufacturer, firmwareVersion, hardwareVersion, model, effects, panelLayout, state);

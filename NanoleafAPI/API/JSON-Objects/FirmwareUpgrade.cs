@@ -2,13 +2,13 @@
 
 namespace NanoleafAPI
 {
-    public struct FirmwareUpgrade
+    public readonly struct FirmwareUpgrade
     {
         [JsonPropertyName("firmwareAvailability")]
-        public bool FirmwareAvailability { get; }
+        public readonly bool FirmwareAvailability { get; }
 
         [JsonPropertyName("newFirmwareVersion")]
-        public string? NewFirmwareVersion { get; }
+        public readonly string? NewFirmwareVersion { get; }
 
         [JsonConstructor]
         public FirmwareUpgrade(bool firmwareAvailability, string? newFirmwareVersion) => (FirmwareAvailability, NewFirmwareVersion) = (firmwareAvailability, newFirmwareVersion);

@@ -3,15 +3,15 @@ using System.Net.Sockets;
 
 namespace NanoleafAPI
 {
-    public struct UdpState
+    public readonly struct UdpState
     {
-        public IPEndPoint EndPoint { get; }
-        public UdpClient UdpClient { get; }
+        public readonly IPEndPoint EndPoint { get; }
+        public readonly UdpClient UdpClient { get; }
 
-        public UdpState(UdpClient udpClient, IPEndPoint endPoint)
+        public UdpState(in UdpClient udpClient, in IPEndPoint endPoint)
         {
-            EndPoint = endPoint;
-            UdpClient = udpClient;
+            this.EndPoint = endPoint;
+            this.UdpClient = udpClient;
         }
     }
 }

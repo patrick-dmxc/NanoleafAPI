@@ -97,11 +97,11 @@ namespace NanoleafAPI_Tests
                 panels.Add(new Panel(IP, pp));
             }
 
-            var rgbw = new Panel.RGBW(0, 0, 0, 0);
+            var rgbw = new RGBW(0, 0, 0, 0);
             byte val = 0;
             do
             {
-                rgbw = new Panel.RGBW(val, 0, 0, 0);
+                rgbw = new RGBW(val, 0, 0, 0);
                 panels.ForEach(p => p.StreamingColor = rgbw);
                 var data1 = Communication.CreateStreamingData(panels);
                 Assert.That(data1, Is.Not.Null);
@@ -114,7 +114,7 @@ namespace NanoleafAPI_Tests
 
             do
             {
-                rgbw = new Panel.RGBW(255, val, val, 0);
+                rgbw = new RGBW(255, val, val, 0);
                 var controlPanel = panels.Where(p => p.Shape == PanelPosition.EShapeType.ControlSquarePrimary).ToList();
                 controlPanel.ForEach(p => p.StreamingColor = rgbw);
                 var data2 = Communication.CreateStreamingData(controlPanel);
@@ -127,7 +127,7 @@ namespace NanoleafAPI_Tests
             while (val != 0);
             do
             {
-                panels.ForEach(p => p.StreamingColor = new Panel.RGBW((byte)(p.StreamingColor.R - 1), (byte)(p.StreamingColor.G - 1), (byte)(p.StreamingColor.B - 1), 0));
+                panels.ForEach(p => p.StreamingColor = new RGBW((byte)(p.StreamingColor.R - 1), (byte)(p.StreamingColor.G - 1), (byte)(p.StreamingColor.B - 1), 0));
                 var data3 = Communication.CreateStreamingData(panels);
                 Assert.That(data3, Is.Not.Null);
                 await Communication.SendUDPCommand(externalControlInfo.Value, data3);
@@ -143,7 +143,7 @@ namespace NanoleafAPI_Tests
                 panels.ForEach(p =>
                 {
                     Random.Shared.NextBytes(randomValues);
-                    p.StreamingColor = new Panel.RGBW(randomValues[0], randomValues[1], randomValues[2], randomValues[3]);
+                    p.StreamingColor = new RGBW(randomValues[0], randomValues[1], randomValues[2], randomValues[3]);
                 });
                 var data4 = Communication.CreateStreamingData(panels);
                 Assert.That(data4, Is.Not.Null);
@@ -151,7 +151,7 @@ namespace NanoleafAPI_Tests
                 await Task.Delay(10);
             }
 
-            rgbw = new Panel.RGBW(0, 0, 0, 0);
+            rgbw = new RGBW(0, 0, 0, 0);
             panels.ForEach(p => p.StreamingColor = rgbw);
             var data5 = Communication.CreateStreamingData(panels);
             Assert.That(data5, Is.Not.Null);
