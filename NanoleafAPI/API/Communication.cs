@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using RestSharp;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Net;
@@ -71,29 +70,6 @@ namespace NanoleafAPI
             }
         }
         public static event EventHandler<DiscoveredEventArgs>? DeviceDiscovered;
-
-        private static async Task<RestResponse?> put(string address, string contentString)
-        {
-            using (RestClient restClient = new RestClient(address))
-            {
-                try
-                {
-                    var request = new RestRequest((string?)null, Method.Put)
-                    {
-                        Timeout = 1000
-                    };
-                    request.AddJsonBody(contentString);
-                    _logger?.LogDebug($"Put: {address} {contentString}");
-                    return await restClient.ExecuteAsync(request).ConfigureAwait(false);
-                }
-
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-            }
-            return null;
-        }
 
         #region Discover SSDP
         private static bool discoverySSDPTaskRunning = false;
@@ -457,19 +433,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
             string contentString = value ? "{\"on\" : {\"value\": true}}" : "{\"on\" : {\"value\": false}}";
-
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetStateOnOff)} State for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetStateOnOff)} State for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetStateOnOff)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetStateOnOff)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -513,23 +492,23 @@ namespace NanoleafAPI
         {
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
-            string? contentString = null;
-            //if (duration == 0)
-            //    contentString = "{\"brightness\": {\"value\": " + value + "}}";
-            //else
-            contentString = "{\"brightness\": {\"value\": " + value + ", \"duration\": " + duration + "}}";
-            try
+            string? contentString = "{\"brightness\": {\"value\": " + value + ", \"duration\": " + duration + "}}";
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetStateBrightness)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetStateBrightness)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetStateBrightness)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetStateBrightness)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -538,18 +517,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"brightness\": {\"increment\": " + value + "}}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetStateBrightnessIncrement)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetStateBrightnessIncrement)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetStateBrightnessIncrement)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetStateBrightnessIncrement)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -594,18 +577,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"hue\" : {\"value\": " + value + "}}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetStateHue)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetStateHue)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetStateHue)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetStateHue)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -614,18 +601,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"hue\": {\"increment\": " + value + "}}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetStateHueIncrement)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetStateHueIncrement)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetStateHueIncrement)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetStateHueIncrement)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -670,18 +661,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"sat\" : {\"value\": " + value + "}}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetStateSaturation)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetStateSaturation)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetStateSaturation)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetStateSaturation)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -690,18 +685,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"sat\": {\"increment\": " + value + "}}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetStateSaturationIncrement)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetStateSaturationIncrement)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetStateSaturationIncrement)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetStateSaturationIncrement)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -746,18 +745,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"ct\" : {\"value\": " + value + "}}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetStateColorTemperature)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetStateColorTemperature)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetStateColorTemperature)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetStateColorTemperature)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -766,18 +769,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state");
             string contentString = "{\"ct\": {\"increment\": " + value + "}}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetStateColorTemperatureIncrement)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetStateColorTemperatureIncrement)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetStateColorTemperatureIncrement)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetStateColorTemperatureIncrement)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -821,19 +828,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "state/colorMode");
             string contentString = "{" + $"\"select\": \"{value}\"" + "}";
-
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetColorMode)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetColorMode)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetStateColorTemperatureIncrement)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetStateColorTemperatureIncrement)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -879,18 +889,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "effects");
             string contentString = "{" + $"\"select\": \"{value}\"" + "}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetSelectedEffect)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetSelectedEffect)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetSelectedEffect)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetSelectedEffect)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -970,18 +984,22 @@ namespace NanoleafAPI
             bool? result = false;
             string address = createUrl(ip, port, auth_token, "panelLayout");
             string contentString = "{\"globalOrientation\" : {\"value\": " + value + "}}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetPanelLayoutGlobalOrientation)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetPanelLayoutGlobalOrientation)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetPanelLayoutGlobalOrientation)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetPanelLayoutGlobalOrientation)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -1025,22 +1043,25 @@ namespace NanoleafAPI
         {
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "identify");
-            try
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(Identify)} for \"{ip}\"");
-                var response = await put(address, string.Empty);
-                result = response?.StatusCode == HttpStatusCode.NoContent || response?.StatusCode == HttpStatusCode.OK;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(Identify)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, null);
+                    result = response?.StatusCode == HttpStatusCode.NoContent || response?.StatusCode == HttpStatusCode.OK;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(Identify)} response: successfull");
-            }
-            catch (HttpRequestException he)
-            {
-                _logger?.LogDebug(he, string.Empty);
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(Identify)} response: successfull");
+                }
+                catch (HttpRequestException he)
+                {
+                    _logger?.LogDebug(he, string.Empty);
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -1116,26 +1137,30 @@ namespace NanoleafAPI
             Animations? result = null;
             string address = createUrl(ip, port, auth_token, "effects");
             string contentString = "{" + "\"write\":{ \"command\":\"requestAll\"} }";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(GetRequerstAll)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                if (response?.StatusCode == HttpStatusCode.OK)
+                try
                 {
-                    string? content = response.Content;
-                    if (content != null)
-                        result = JsonSerializer.Deserialize<Animations?>(content);
-                    if (result != null)
-                        _logger?.LogDebug($"Received {nameof(GetRequerstAll)}: {result}");
+                    _logger?.LogDebug($"Request {nameof(GetRequerstAll)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    if (response?.StatusCode == HttpStatusCode.OK)
+                    {
+                        string? content = await response.Content.ReadAsStringAsync();
+                        if (content != null)
+                            result = JsonSerializer.Deserialize<Animations?>(content);
+                        if (result != null)
+                            _logger?.LogDebug($"Received {nameof(GetRequerstAll)}: {result}");
+                        else
+                            _logger?.LogDebug($"Received {nameof(GetRequerstAll)} response can't be Deserialized: {content}");
+                    }
                     else
-                        _logger?.LogDebug($"Received {nameof(GetRequerstAll)} response can't be Deserialized: {content}");
+                        _logger?.LogDebug($"Received Response for {nameof(GetRequerstAll)}: {response}");
                 }
-                else
-                    _logger?.LogDebug($"Received Response for {nameof(GetRequerstAll)}: {response}");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -1144,25 +1169,29 @@ namespace NanoleafAPI
             string? result = null;
             string address = createUrl(ip, port, auth_token, "effects");
             string contentString = "{" + "\"write\":{ \"command\":\"requestTouchConfig\"} }";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(GetTouchConfig)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                if (response?.StatusCode == HttpStatusCode.OK)
+                try
                 {
-                    string? content = response.Content;
-                    result = content;//JsonConvert.DeserializeObject<Layout>(content);
-                    if (result != null)
-                        _logger?.LogDebug($"Received {nameof(GetTouchConfig)}: {result}");
+                    _logger?.LogDebug($"Request {nameof(GetTouchConfig)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    if (response?.StatusCode == HttpStatusCode.OK)
+                    {
+                        string? content = await response.Content.ReadAsStringAsync();
+                        result = content;//JsonConvert.DeserializeObject<Layout>(content);
+                        if (result != null)
+                            _logger?.LogDebug($"Received {nameof(GetTouchConfig)}: {result}");
+                        else
+                            _logger?.LogDebug($"Received {nameof(GetTouchConfig)} response can't be Deserialized: {content}");
+                    }
                     else
-                        _logger?.LogDebug($"Received {nameof(GetTouchConfig)} response can't be Deserialized: {content}");
+                        _logger?.LogDebug($"Received Response for {nameof(GetTouchConfig)}: {response}");
                 }
-                else
-                    _logger?.LogDebug($"Received Response for {nameof(GetTouchConfig)}: {response}");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -1171,25 +1200,29 @@ namespace NanoleafAPI
             string? result = null;
             string address = createUrl(ip, port, auth_token, "effects");
             string contentString = "{" + "\"write\":{ \"command\":\"getTouchKillSwitch\"} }";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(GetTouchKillSwitch)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                if (response?.StatusCode == HttpStatusCode.OK)
+                try
                 {
-                    string? content = response.Content;
-                    result = content;//JsonConvert.DeserializeObject<Layout>(content);
-                    if (result != null)
-                        _logger?.LogDebug($"Received {nameof(GetTouchKillSwitch)}: {result}");
+                    _logger?.LogDebug($"Request {nameof(GetTouchKillSwitch)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    if (response?.StatusCode == HttpStatusCode.OK)
+                    {
+                        string? content = await response.Content.ReadAsStringAsync();
+                        result = content;//JsonConvert.DeserializeObject<Layout>(content);
+                        if (result != null)
+                            _logger?.LogDebug($"Received {nameof(GetTouchKillSwitch)}: {result}");
+                        else
+                            _logger?.LogDebug($"Received {nameof(GetTouchKillSwitch)} response can't be Deserialized: {content}");
+                    }
                     else
-                        _logger?.LogDebug($"Received {nameof(GetTouchKillSwitch)} response can't be Deserialized: {content}");
+                        _logger?.LogDebug($"Received Response for {nameof(GetTouchKillSwitch)}: {response}");
                 }
-                else
-                    _logger?.LogDebug($"Received Response for {nameof(GetTouchKillSwitch)}: {response}");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -1198,18 +1231,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "effects");
             string contentString = "{" + "\"write\":{\"command\":\"setTouchKillSwitch\",\"touchKillSwitchOn\":" + enabled + "}}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -1218,18 +1255,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "effects");
             string contentString = enabled ? "{" + "\"write\":{ \"command\":\"enableAllControllerButtons\"} }" : "{" + "\"write\":{ \"command\":\"disableAllControllerButtons\"} }";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetCommandControllerButtons)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetCommandControllerButtons)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetCommandControllerButtons)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetCommandControllerButtons)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -1238,18 +1279,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "effects");
             string contentString = enabled ? "{\"write\":{ \"command\":\"enableSceneChangeAnimation\"} }" : "{\"write\":{ \"command\":\"disableSceneChangeAnimation\"} }";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -1258,18 +1303,22 @@ namespace NanoleafAPI
             bool? result = null;
             string address = createUrl(ip, port, auth_token, "effects");
             string contentString = "{\"write\":{\"command\":\"configureTouch\",\"touchConfig\":{\"userSystemConfig\":{\"enabled\":" + enabled + "}}}}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
-                var response = await put(address, contentString);
-                result = response?.StatusCode == HttpStatusCode.NoContent;
+                try
+                {
+                    _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
+                    result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                if (result == true)
-                    _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                    if (result == true)
+                        _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }
@@ -1281,46 +1330,51 @@ namespace NanoleafAPI
             ExternalControlConnectionInfo? result = null;
             string address = createUrl(ip, port,auth_token,"effects");
             string contentString = "{\"write\": {\"command\": \"display\", \"animType\": \"extControl\", \"extControlVersion\": \"v2\"}}";
-            try
+            HttpContent httpContent = new StringContent(contentString);
+            using (HttpClient hc = new HttpClient())
             {
-                _logger?.LogDebug($"Request {nameof(SetExternalControlStreaming)} for \"{ip}\"");
-                var response = await put(address, contentString);
-
-                switch (deviceType)
+                try
                 {
-                    case EDeviceType.LightPanles:
-                        if (response?.StatusCode == HttpStatusCode.OK)
-                        {
-                            if (!string.IsNullOrWhiteSpace(response.Content))
-                                result = JsonSerializer.Deserialize<ExternalControlConnectionInfo?>(response.Content);
-                        }
-                        else
-                            _logger?.LogDebug($"Received Response for {nameof(SetExternalControlStreaming)}: {response}");
-                        break;
+                    _logger?.LogDebug($"Request {nameof(SetExternalControlStreaming)} for \"{ip}\"");
+                    var response = await hc.PutAsync(address, httpContent);
 
-                    case EDeviceType.Shapes:
-                    case EDeviceType.Canvas:
-                    case EDeviceType.Elements:
-                    case EDeviceType.Lines:
-                    case EDeviceType.Essentials:
-                    default:
-                        if (response?.StatusCode == HttpStatusCode.NoContent)
-                        {
-                            result = new ExternalControlConnectionInfo(ip, 60222, "udp");
-                        }
-                        else
-                            _logger?.LogDebug($"Received Response for {nameof(SetExternalControlStreaming)}: {response}");
-                        break;
+                    switch (deviceType)
+                    {
+                        case EDeviceType.LightPanles:
+                            if (response?.StatusCode == HttpStatusCode.OK)
+                            {
+                                string content = await response.Content.ReadAsStringAsync();
+                                if (!string.IsNullOrWhiteSpace(content))
+                                    result = JsonSerializer.Deserialize<ExternalControlConnectionInfo?>(content);
+                            }
+                            else
+                                _logger?.LogDebug($"Received Response for {nameof(SetExternalControlStreaming)}: {response}");
+                            break;
+
+                        case EDeviceType.Shapes:
+                        case EDeviceType.Canvas:
+                        case EDeviceType.Elements:
+                        case EDeviceType.Lines:
+                        case EDeviceType.Essentials:
+                        default:
+                            if (response?.StatusCode == HttpStatusCode.NoContent)
+                            {
+                                result = new ExternalControlConnectionInfo(ip, 60222, "udp");
+                            }
+                            else
+                                _logger?.LogDebug($"Received Response for {nameof(SetExternalControlStreaming)}: {response}");
+                            break;
+                    }
+
+                    if (result.HasValue)
+                        _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)}: {result}");
+                    else
+                        _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)} response can't be Deserialized: {response?.Content}");
                 }
-
-                if (result.HasValue)
-                    _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)}: {result}");
-                else
-                    _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)} response can't be Deserialized: {response?.Content}");
-            }
-            catch (Exception e)
-            {
-                _logger?.LogWarning(e, string.Empty);
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(e, string.Empty);
+                }
             }
             return result;
         }

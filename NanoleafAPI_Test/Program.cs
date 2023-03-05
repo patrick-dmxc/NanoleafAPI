@@ -3,7 +3,6 @@ using NanoleafAPI;
 using System;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace NanoleafTest
 {
@@ -39,7 +38,7 @@ namespace NanoleafTest
                 byte val = 0;
                 while (alive)
                 {
-                    var rgbw = new Panel.RGBW(val, 0, 0, 0);
+                    var rgbw = new RGBW(val, 0, 0, 0);
                     foreach (var p in controller.Panels.ToArray())
                         _ = controller.SetPanelColor(p.ID, rgbw);
                     Thread.Sleep(10);
