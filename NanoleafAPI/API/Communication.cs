@@ -418,62 +418,11 @@ namespace NanoleafAPI
         {
             var res = await SendRequest<string>(new Request(ip, port, auth_token, "effects/select", null, HttpMethod.Get, HttpStatusCode.OK));
             return res;
-            //string? result = null;
-            //string address = createUrl(ip, port, auth_token, "effects/select");
-            //using (HttpClient hc = new HttpClient())
-            //{
-            //    try
-            //    {
-            //        _logger?.LogDebug($"Request {nameof(GetSelectedEffect)} for \"{ip}\"");
-            //        var response = await hc.GetAsync(address);
-            //        if (response?.StatusCode == HttpStatusCode.OK)
-            //        {
-            //            result = await response.Content.ReadAsStringAsync();
-            //            if (result != null)
-            //            {
-            //                result = result.Replace("\"", "");
-            //                _logger?.LogDebug($"Received {nameof(GetStateSaturation)}: {result}");
-            //            }
-            //        }
-            //        else
-            //            _logger?.LogDebug($"Received Response for {nameof(GetSelectedEffect)}: {response}");
-            //    }
-            //    catch (HttpRequestException he)
-            //    {
-            //        _logger?.LogDebug(he, string.Empty);
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        _logger?.LogWarning(e, string.Empty);
-            //    }
-            //}
-            //return result;
         }
         public static async Task<Result<object>> SetSelectedEffect(string ip, string port, string auth_token, string value)
         {
             var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { select = value }), HttpMethod.Put, HttpStatusCode.NoContent));
             return res;
-            //bool? result = null;
-            //string address = createUrl(ip, port, auth_token, "effects");
-            //string contentString = "{" + $"\"select\": \"{value}\"" + "}";
-            //HttpContent httpContent = new StringContent(contentString);
-            //using (HttpClient hc = new HttpClient())
-            //{
-            //    try
-            //    {
-            //        _logger?.LogDebug($"Request {nameof(SetSelectedEffect)} for \"{ip}\"");
-            //        var response = await hc.PutAsync(address, httpContent);
-            //        result = response?.StatusCode == HttpStatusCode.NoContent;
-
-            //        if (result == true)
-            //            _logger?.LogDebug($"Received {nameof(SetSelectedEffect)} response: successfull");
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        _logger?.LogWarning(e, string.Empty);
-            //    }
-            //}
-            //return result;
         }
         public static async Task<Result<IReadOnlyList<string>>> GetEffectList(string ip, string port, string auth_token)
         {
