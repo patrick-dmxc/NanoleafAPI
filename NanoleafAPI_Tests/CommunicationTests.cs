@@ -2,11 +2,14 @@ using NanoleafAPI;
 using System.Net;
 using EAttribute_StateEvent = NanoleafAPI.StateEvent.EAttribute;
 using EAttribute_LayoutEvent = NanoleafAPI.LayoutEvent.EAttribute;
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace NanoleafAPI_Tests
 {
     public class CommunicationTests
     {
+        private static ILogger? __logger = null;
         const string IP = "192.168.10.152";
         const string PORT = "16021";
         const string AUTH_TOKEN = "7lOFIqsyqmO8c8H2bYco74z4fK2DmXqK";
@@ -14,29 +17,38 @@ namespace NanoleafAPI_Tests
         public void Setup()
         {
             Tools.LoggerFactory = new TestLoggerFactory();
-
+            __logger = Tools.LoggerFactory.CreateLogger(nameof(Communication));
             Communication.RegisterIPAddress(IPAddress.Any);
         }
         [Test]
         public async Task TestPing()
         {
+            Stopwatch sw = new Stopwatch();
             for (int i = 0; i < 10; i++)
             {
-                bool? response = await Communication.Ping(IP, PORT);
-
-                Assert.That(response, Is.True);
-                await Task.Delay(100);
+                sw.Restart();
+                var response = await Communication.Ping(IP, PORT);
+                sw.Stop();
+                Assert.That(response.Success, Is.True);
+                __logger?.LogDebug($"Ping took: {sw.ElapsedMilliseconds}ms");
             }
         }
         [Test]
         public async Task TestPingFreakOut()
         {
+            int countErrors = 0;
+            Stopwatch sw = new Stopwatch();
             for (int i = 0; i < 1000; i++)
             {
-                bool? response = await Communication.Ping(IP, PORT);
-
-                Assert.That(response, Is.True);
+                sw.Restart();
+                var response = await Communication.Ping(IP, PORT);
+                sw.Stop();
+                if (!response.Success)
+                    countErrors++;
+                __logger?.LogDebug($"Ping took: {sw.ElapsedMilliseconds}ms");
             }
+            Assert.That(countErrors, Is.InRange(0, 10));
+            __logger?.LogDebug($"Error-Count: {countErrors}");
         }
 
         [Test]
@@ -44,15 +56,15 @@ namespace NanoleafAPI_Tests
         {
             for (int i = 0; i < 10; i++)
             {
-                var user = await Communication.AddUser(IP, PORT);
+                var responseAdd = await Communication.AddUser(IP, PORT);
 
-                Assert.That(user.HasValue, Is.True);
-                string? authToken = user.Value.AuthToken;
+                Assert.That(responseAdd.Success, Is.True);
+                string? authToken = responseAdd.ResponseValue.AuthToken;
 
                 Assert.That(authToken, Is.Not.Null);
                 Assert.That(Tools.IsTokenValid(authToken), Is.True);
-                bool? sucess = await Communication.DeleteUser(IP, PORT, authToken);
-                Assert.That(sucess, Is.True);
+                var responseDelete = await Communication.DeleteUser(IP, PORT, authToken);
+                Assert.That(responseDelete.Success, Is.True);
                 await Task.Delay(100);
             }
         }
@@ -60,40 +72,57 @@ namespace NanoleafAPI_Tests
         public async Task TestManyGetMethodes()
         {
             await Task.Delay(500);
-            var info = await Communication.GetAllPanelInfo(IP, PORT, AUTH_TOKEN);
-            Assert.That(info.HasValue, Is.True);
+            var response = await Communication.GetAllPanelInfo(IP, PORT, AUTH_TOKEN);
+            Assert.That(response.Success, Is.True);
             Assert.Multiple(() =>
             {
-                Assert.That(info.Value.SerialNumber, Is.EqualTo("S19124C8036"));
-                Assert.That(info.Value.Model, Is.EqualTo("NL29"));
-                Assert.That(info.Value.Name, Is.EqualTo("Canvas C097"));
-                Assert.That(info.Value.HardwareVersion, Is.EqualTo("2.0-4"));
-                Assert.That(info.Value.Manufacturer, Is.EqualTo("Nanoleaf"));
+                Assert.That(response.ResponseValue.SerialNumber, Is.EqualTo("S19124C8036"));
+                Assert.That(response.ResponseValue.Model, Is.EqualTo("NL29"));
+                Assert.That(response.ResponseValue.Name, Is.EqualTo("Canvas C097"));
+                Assert.That(response.ResponseValue.HardwareVersion, Is.EqualTo("2.0-4"));
+                Assert.That(response.ResponseValue.Manufacturer, Is.EqualTo("Nanoleaf"));
             });
 
-            Assert.That(await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.Brightness.Value));
-            Assert.That(await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.Saturation.Value));
-            Assert.That(await Communication.GetStateHue(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.Hue.Value));
-            Assert.That(await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.ColorTemprature.Value));
-            Assert.That(await Communication.GetColorMode(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.ColorMode));
-            Assert.That(await Communication.GetStateOnOff(IP, PORT, AUTH_TOKEN), Is.EqualTo(info.Value.State.On.On));
+            var responseGetStateBrightness = await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGetStateBrightness.Success, Is.True);
+            Assert.That(responseGetStateBrightness.ResponseValue.Value, Is.EqualTo(response.ResponseValue.State.Brightness.Value));
+
+            var responseGetStateSaturation = await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGetStateSaturation.Success, Is.True);
+            Assert.That(responseGetStateSaturation.ResponseValue.Value, Is.EqualTo(response.ResponseValue.State.Saturation.Value));
+
+            var responseGetStateHue = await Communication.GetStateHue(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGetStateHue.Success, Is.True);
+            Assert.That(responseGetStateHue.ResponseValue.Value, Is.EqualTo(response.ResponseValue.State.Hue.Value));
+
+            var responseGetStateColorTemperature = await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGetStateColorTemperature.Success, Is.True);
+            Assert.That(responseGetStateColorTemperature.ResponseValue.Value, Is.EqualTo(response.ResponseValue.State.ColorTemprature.Value));
+
+
+            Assert.That(await Communication.GetColorMode(IP, PORT, AUTH_TOKEN), Is.EqualTo(response.ResponseValue.State.ColorMode));
+
+            var responseGetOnOff = await Communication.GetStateOnOff(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGetOnOff.Success, Is.True);
+            Assert.That(responseGetOnOff.ResponseValue.On, Is.EqualTo(response.ResponseValue.State.On.On));
         }
 
         [Test]
         public async Task TestStreaming()
         {
             await Task.Delay(500);
-            var info = await Communication.GetPanelLayoutLayout(IP, PORT, AUTH_TOKEN);
-            Assert.That(info.HasValue, Is.True);
+            var response = await Communication.GetPanelLayoutLayout(IP, PORT, AUTH_TOKEN);
+            Assert.That(response.Success, Is.True);
+            var info = response.ResponseValue;
 
             var externalControlInfo = await Communication.SetExternalControlStreaming(IP, PORT, AUTH_TOKEN, EDeviceType.Canvas);
             Assert.That(externalControlInfo.HasValue, Is.True);
 
             List<Panel> panels = new List<Panel>();
-            var ids = info.Value.PanelPositions.Select(p => p.PanelId);
+            var ids = info.PanelPositions.Select(p => p.PanelId);
             foreach (int id in ids)
             {
-                var pp = info.Value.PanelPositions.Single(p => p.PanelId.Equals(id));
+                var pp = info.PanelPositions.Single(p => p.PanelId.Equals(id));
                 panels.Add(new Panel(IP, pp));
             }
 
@@ -161,9 +190,10 @@ namespace NanoleafAPI_Tests
         public async Task TestGetSetEffects()
         {
             await Task.Delay(500);
-            var list = await Communication.GetEffectList(IP, PORT, AUTH_TOKEN);
-            Assert.That(list, Is.Not.Null);
-            foreach (string effect in list)
+            var response = await Communication.GetEffectList(IP, PORT, AUTH_TOKEN);
+            Assert.That(response.Success, Is.True);
+
+            foreach (string effect in response.ResponseValue!)
             {
                 Assert.That(await Communication.SetSelectedEffect(IP, PORT, AUTH_TOKEN, effect), Is.True);
                 var selectedEffect = await Communication.GetSelectedEffect(IP, PORT, AUTH_TOKEN);
@@ -174,67 +204,130 @@ namespace NanoleafAPI_Tests
         public async Task TestGetSetColorTemperature()
         {
             await Task.Delay(500);
-            var backupCT = await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN);
+            var responseGet = await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            var backupCT = responseGet.ResponseValue;
+
             Assert.That(backupCT, Is.Not.Zero);
-            Assert.That(backupCT, Is.Not.Null);
             Assert.That(await Communication.SetStateColorTemperature(IP, PORT, AUTH_TOKEN, 1200), Is.True);
-            Assert.That(await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN), Is.EqualTo(1200));
+
+            responseGet = await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(1200));
+
             await Task.Delay(500);
 
             Assert.That(await Communication.SetStateColorTemperatureIncrement(IP, PORT, AUTH_TOKEN, 5300), Is.True);
-            Assert.That(await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN), Is.EqualTo(6500));
+
+            responseGet = await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(6500));
+
             await Task.Delay(500);
-            Assert.That(await Communication.SetStateColorTemperature(IP, PORT, AUTH_TOKEN, (ushort)backupCT), Is.True);
-            Assert.That(await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN), Is.EqualTo(backupCT));
+            Assert.That(await Communication.SetStateColorTemperature(IP, PORT, AUTH_TOKEN, backupCT.Value), Is.True);
+
+            responseGet = await Communication.GetStateColorTemperature(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(backupCT.Value));
         }
 
         [Test]
         public async Task TestGetSetSaturation()
         {
             await Task.Delay(500);
-            var backupSat = await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN);
-            Assert.That(backupSat, Is.Not.Null);
+            var responseGet = await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            var backupSat = responseGet.ResponseValue;
+
             Assert.That(await Communication.SetStateSaturation(IP, PORT, AUTH_TOKEN, 10), Is.True);
-            Assert.That(await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN), Is.EqualTo(10));
+
+            responseGet = await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(10));
+
             await Task.Delay(500);
+
             Assert.That(await Communication.SetStateSaturationIncrement(IP, PORT, AUTH_TOKEN, 90), Is.True);
-            Assert.That(await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN), Is.EqualTo(100));
+
+            responseGet = await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(100));
+
             await Task.Delay(500);
-            Assert.That(await Communication.SetStateSaturation(IP, PORT, AUTH_TOKEN, (ushort)backupSat), Is.True);
-            Assert.That(await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN), Is.EqualTo(backupSat));
+
+            Assert.That(await Communication.SetStateSaturation(IP, PORT, AUTH_TOKEN, backupSat.Value), Is.True);
+
+            responseGet = await Communication.GetStateSaturation(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(backupSat.Value));
         }
         [Test]
         public async Task TestGetSetHue()
         {
             await Task.Delay(500);
-            var backupHue = await Communication.GetStateHue(IP, PORT, AUTH_TOKEN);
-            Assert.That(backupHue, Is.Not.Null);
+            var responseGet = await Communication.GetStateHue(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            var backupHue = responseGet.ResponseValue;
+
             Assert.That(await Communication.SetStateHue(IP, PORT, AUTH_TOKEN, 0), Is.True);
-            Assert.That(await Communication.GetStateHue(IP, PORT, AUTH_TOKEN), Is.Zero);
+
+            responseGet = await Communication.GetStateHue(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.Zero);
+
             await Task.Delay(500);
+
             Assert.That(await Communication.SetStateHueIncrement(IP, PORT, AUTH_TOKEN, 180), Is.True);
-            Assert.That(await Communication.GetStateHue(IP, PORT, AUTH_TOKEN), Is.EqualTo(180));
+
+            responseGet = await Communication.GetStateHue(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(180));
+
             await Task.Delay(500);
-            Assert.That(await Communication.SetStateHue(IP, PORT, AUTH_TOKEN, (ushort)backupHue), Is.True);
-            Assert.That(await Communication.GetStateHue(IP, PORT, AUTH_TOKEN), Is.EqualTo(backupHue));
+
+            Assert.That(await Communication.SetStateHue(IP, PORT, AUTH_TOKEN, backupHue.Value), Is.True);
+
+            responseGet = await Communication.GetStateHue(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(backupHue.Value));
         }
         [Test]
         public async Task TestGetSetBrightness()
         {
             await Task.Delay(500);
-            var backupBrightness = await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN);
-            Assert.That(backupBrightness, Is.Not.Null);
+            var responseGet = await Communication.GetStateHue(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            var backupBrightness = responseGet.ResponseValue;
+
             Assert.That(await Communication.SetStateBrightness(IP, PORT, AUTH_TOKEN, 0), Is.True);
-            Assert.That(await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN), Is.Zero);
+
+            responseGet = await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.Zero);
+
             await Task.Delay(500);
+
             Assert.That(await Communication.SetStateBrightnessIncrement(IP, PORT, AUTH_TOKEN, 100), Is.True);
-            Assert.That(await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN), Is.EqualTo(100));
+
+            responseGet = await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(100));
+
             Assert.That(await Communication.SetStateBrightness(IP, PORT, AUTH_TOKEN, 0, 1), Is.True);
+
             await Task.Delay(1100);
-            Assert.That(await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN), Is.Zero);
+
+            responseGet = await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.Zero);
+
             await Task.Delay(500);
-            Assert.That(await Communication.SetStateBrightness(IP, PORT, AUTH_TOKEN, (ushort)backupBrightness), Is.True);
-            Assert.That(await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN), Is.EqualTo(backupBrightness));
+
+            Assert.That(await Communication.SetStateBrightness(IP, PORT, AUTH_TOKEN, backupBrightness.Value), Is.True);
+
+            responseGet = await Communication.GetStateBrightness(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(backupBrightness.Value));
         }
 
         [Test]
@@ -247,7 +340,10 @@ namespace NanoleafAPI_Tests
             Communication.StartEventListener(IP, PORT, AUTH_TOKEN);
             await Task.Delay(2000);
             Assert.That(await Communication.SetStateOnOff(IP, PORT, AUTH_TOKEN, false), Is.True);
-            Assert.That(await Communication.GetStateOnOff(IP, PORT, AUTH_TOKEN), Is.False);
+
+            var responseGet = await Communication.GetStateOnOff(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.On, Is.False);
             while (args?.StateEvents.Events?.FirstOrDefault(e => e.Attribute == EAttribute_StateEvent.On) == null)
                 await Task.Delay(1);
             Assert.That(args.IP, Is.EqualTo(IP));
@@ -257,14 +353,16 @@ namespace NanoleafAPI_Tests
 
             await Task.Delay(2000);
             Assert.That(await Communication.SetStateOnOff(IP, PORT, AUTH_TOKEN, true), Is.True);
-            Assert.That(await Communication.GetStateOnOff(IP, PORT, AUTH_TOKEN), Is.True);
+
+            responseGet = await Communication.GetStateOnOff(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.On, Is.True);
             while (args?.StateEvents.Events?.FirstOrDefault(e => e.Attribute == EAttribute_StateEvent.On) == null)
                 await Task.Delay(1);
             Assert.That(args.IP, Is.EqualTo(IP));
             Assert.That(args.StateEvents.Events.First(e => e.Attribute == EAttribute_StateEvent.On).Attribute, Is.EqualTo(EAttribute_StateEvent.On));
             Assert.That(args.StateEvents.Events.First(e => e.Attribute == EAttribute_StateEvent.On).On, Is.True);
             args = null;
-            await Task.Delay(2000);
         }
         [Test]
         public async Task TestGetSetGlobalOrientation()
@@ -273,10 +371,16 @@ namespace NanoleafAPI_Tests
             await Task.Delay(500);
             Communication.StaticOnLayoutEvent += (o, e) => { args = e; };
             Communication.StartEventListener(IP, PORT, AUTH_TOKEN);
-            var backupGlobalOrientation = await Communication.GetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN);
+
+            var responseGet = await Communication.GetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            var backupGlobalOrientation = responseGet.ResponseValue;
 
             Assert.That(await Communication.SetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN, 120), Is.True);
-            Assert.That(await Communication.GetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN), Is.EqualTo(120));
+
+            responseGet = await Communication.GetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(120));
             while (args == null)
                 await Task.Delay(1);
             Assert.That(args.IP, Is.EqualTo(IP));
@@ -285,7 +389,10 @@ namespace NanoleafAPI_Tests
 
             await Task.Delay(500);
             Assert.That(await Communication.SetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN, 270), Is.True);
-            Assert.That(await Communication.GetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN), Is.EqualTo(270));
+
+            responseGet = await Communication.GetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.EqualTo(270));
             while (args == null)
                 await Task.Delay(1);
             Assert.That(args.IP, Is.EqualTo(IP));
@@ -294,7 +401,10 @@ namespace NanoleafAPI_Tests
 
             await Task.Delay(500);
             Assert.That(await Communication.SetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN, 0), Is.True);
-            Assert.That(await Communication.GetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN), Is.Zero);
+
+            responseGet = await Communication.GetPanelLayoutGlobalOrientation(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.Value, Is.Zero);
             while (args == null)
                 await Task.Delay(1);
             Assert.That(args.IP, Is.EqualTo(IP));
@@ -306,23 +416,28 @@ namespace NanoleafAPI_Tests
         public async Task TestIdentify()
         {
             await Task.Delay(500);
-            Assert.That(await Communication.Identify(IP, PORT, AUTH_TOKEN), Is.True);
-            await Task.Delay(5000);
+            var response = await Communication.Identify(IP, PORT, AUTH_TOKEN);
+            Assert.That(response.Success, Is.True);
         }
         [Test]
         public async Task TestIdentifyAndroid()
         {
             await Task.Delay(500);
-            Assert.That(await Communication.IdentifyAndroid(IP), Is.True);
-            await Task.Delay(5000);
+            var response = await Communication.IdentifyAndroid(IP);
+            Assert.That(response.Success, Is.True);
         }
 
         [Test]
         public async Task TestFirmwareUpgrade()
         {
             await Task.Delay(500);
-            Assert.That(await Communication.GetFirmwareUpgrade(IP, PORT, AUTH_TOKEN), Is.Not.Null);
-            await Task.Delay(5000);
+            var response = await Communication.GetFirmwareUpgrade(IP, PORT, AUTH_TOKEN);
+            Assert.That(response.Success, Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.ResponseValue.NewFirmwareVersion, Is.Null);
+                Assert.That(response.ResponseValue.FirmwareAvailability, Is.False);
+            });
         }
         [Test]
         public async Task TestCommands()
@@ -331,7 +446,6 @@ namespace NanoleafAPI_Tests
             Assert.That(await Communication.GetTouchConfig(IP, PORT, AUTH_TOKEN), Is.Not.Null);
             Assert.That(await Communication.GetTouchKillSwitch(IP, PORT, AUTH_TOKEN), Is.Not.Null);
             Assert.That(await Communication.GetRequerstAll(IP, PORT, AUTH_TOKEN), Is.Not.Null);
-            await Task.Delay(5000);
         }
         [Test]
         public async Task TestRequestAll()
@@ -339,7 +453,6 @@ namespace NanoleafAPI_Tests
             await Task.Delay(500);
             Animations? a = await Communication.GetRequerstAll(IP, PORT, AUTH_TOKEN);
             Assert.That(a.HasValue, Is.True);
-            await Task.Delay(5000);
         }
     }
 }

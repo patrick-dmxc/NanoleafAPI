@@ -254,8 +254,11 @@ namespace NanoleafAPI
                 try
                 {
                     var user = await Communication.AddUser(IP, Port);
-                    if (user.HasValue)
-                        Auth_token = user.Value.AuthToken;
+                    if (user.Success)
+                        Auth_token = user.ResponseValue.AuthToken;
+                    else
+                        _logger?.LogInformation($"Device({IP}) can't obtain AuthToken");
+
                 }
                 catch (Exception e)
                 {
@@ -290,21 +293,24 @@ namespace NanoleafAPI
             {
                 try
                 {
-                    this.Reachable = await Communication.Ping(IP,Port);
+                    var responsePing= await Communication.Ping(IP, Port);
+                    this.Reachable = responsePing.Success;
 
                     await Task.Delay(5000);
 
                     if (this.Reachable && !isDisposed && Tools.IsTokenValid(Auth_token))
                     {
-                        var allPanelInfo = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
-                        if (allPanelInfo != null)
-                            updateInfos(allPanelInfo);
+                        var response = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
+                        if (response.Success)
+                            updateInfos(response.ResponseValue);
                         else
                         {
                             _logger?.LogDebug($"{nameof(Communication.GetAllPanelInfo)} returned null!");
                             _logger?.LogDebug($"Checking Connection to {IP}");
-                            Reachable = await Communication.Ping(IP, Port);
-                            if (Reachable)
+
+                            responsePing = await Communication.Ping(IP, Port);
+                            this.Reachable = responsePing.Success;
+                            if (this.Reachable)
                             {
                                 _logger?.LogDebug($"Reset Auth_Token for {IP}");
                                 Auth_token = null;
@@ -330,12 +336,12 @@ namespace NanoleafAPI
                 Communication.StaticOnLayoutEvent -= Communication_StaticOnLayoutEvent;
                 Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
 
-                var infos = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
-                if (!infos.HasValue)
+                var reponse = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
+                if (!reponse.Success)
                     return;
 
-                backupSettings(infos.Value);
-                updateInfos(infos);
+                backupSettings(reponse.ResponseValue);
+                updateInfos(reponse.ResponseValue);
                 Communication.StartEventListener(IP, Port, Auth_token);
             }
             catch (Exception e)
@@ -348,11 +354,11 @@ namespace NanoleafAPI
             _logger?.LogInformation($"Starting Stream to {IP}");
             if (Tools.IsTokenValid(Auth_token))
             {
-                var infos = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
-                if (infos.HasValue)
+                var response = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
+                if (response.Success)
                 {
-                    backupSettings(infos.Value);
-                    updateInfos(infos);
+                    backupSettings(response.ResponseValue);
+                    updateInfos(response.ResponseValue);
                 }
 
                 var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);

@@ -1,11 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using ISSDP.UPnP.PCL.Interfaces.Service;
+using Microsoft.Extensions.Logging;
+using SSDP.UPnP.PCL.Service;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Text;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Zeroconf;
 using static NanoleafAPI.TouchEvent;
@@ -72,128 +74,72 @@ namespace NanoleafAPI
         public static event EventHandler<DiscoveredEventArgs>? DeviceDiscovered;
 
         #region Discover SSDP
-        private static bool discoverySSDPTaskRunning = false;
-        private static Task? discoverSSDPTask = null;
-
-        private static IPAddress SSDP_IP = new IPAddress(new byte[] { 239, 255, 255, 250 });
-        private static int SSDP_PORT = 1900;
-
-        private static Dictionary<IPAddress, UdpClient> runningSSDPClients = new Dictionary<IPAddress, UdpClient>();
+        private static Dictionary<IPAddress, IControlPoint> runningSSDPClients = new Dictionary<IPAddress, IControlPoint>();
 
         public static void StartDiscoverySSDPTask()
         {
-            if (discoverySSDPTaskRunning || discoverSSDPTask != null)
-                return;
+            //if (_controlPoint != null)
+            //    return;
+            // Get host name
+            String strHostName = Dns.GetHostName();
 
-            discoverySSDPTaskRunning = true;
-            discoverSSDPTask = new Task(async () =>
+            // Find host by name
+            IPHostEntry iphostentry = Dns.GetHostByName(strHostName);
+
+            // Enumerate IP addresses
+            foreach (IPAddress ipaddress in iphostentry.AddressList)
             {
-                foreach (var ip in ipAddresses)
-                    try
-                    {
-                        var client = new UdpClient();
-                        runningSSDPClients.Add(ip, client);
-                        client.ExclusiveAddressUse = false;
-                        client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                        IPEndPoint e = new IPEndPoint(ip, SSDP_PORT);
-                        client.Client.Bind(e);
-                        client.JoinMulticastGroup(SSDP_IP);
-                        client.MulticastLoopback = true;
-                        UdpState s = new UdpState(client, e);
-                        var result = client.BeginReceive(OnSSDPReceived, s);
-                    }
-                    catch (Exception e)
-                    {
-                        _logger?.LogWarning("The Socket is already in use." + Environment.NewLine +
-                            "there Are a feaw things to fix this issue." + Environment.NewLine +
-                            "Open the CMD.exe and perform the command \"netstat -a -n -o\"" + Environment.NewLine +
-                            "Now you see all open Ports" + Environment.NewLine +
-                            "find TCP [the IP address]:[port number] .... #[target_PID]# (ditto for UDP)" + Environment.NewLine +
-                            "Open TaskManager and Klick on Processes" + Environment.NewLine +
-                            "Enable \"PID\" column by going to: View > Select Columns > Check the box for PID" + Environment.NewLine +
-                            "Find the PID of interest and \"END PROCESS\"" + Environment.NewLine + Environment.NewLine +
-                            "Common Programs are Spotify or the SSDPSRF-Service"
-                            , e);
-                    }
-                _logger?.LogDebug("SSDP DiscoverTask started");
-                while (discoverySSDPTaskRunning)
-                    await Task.Delay(500);
-                foreach (var client in runningSSDPClients)
-                {
-                    if (client.Value.Client != null)
-                        client.Value.Close();
-                }
-                discoverySSDPTaskRunning = false;
-                _logger?.LogDebug("SSDP Discover stopped");
-                _logger?.LogDebug("SSDP DiscoverTask stopped");
-            }, token);
-            discoverSSDPTask.Start();
-        }
-
-
-        static void OnSSDPReceived(IAsyncResult result)
-        {
-            if (result.AsyncState is UdpState)
-            {
-                UdpClient client = ((UdpState)result.AsyncState).UdpClient;
-                IPEndPoint? e = ((UdpState)result.AsyncState).EndPoint;
-                if (client.Client == null ||e == null) 
-                    return;
-
-                byte[] buffer = client.EndReceive(result, ref e);
-                // Handle received data in buffer, send reply to client etc...
-
-                if (e == null)
-                    return;
-                string message = Encoding.Default.GetString(buffer);
-                // Start a new async receive on the client to receive more data.
-                client.BeginReceive(OnSSDPReceived, result.AsyncState);
-                try
-                {
-                    if (message.Contains("nl-devicename"))
-                    {
-                        string remoteAddress = e.Address.ToString();
-                        if (discoveredDevices.Any(d => d.IP.Equals(remoteAddress)))
-                            return;
-                        var array = message.Replace("\r\n", "|").Split('|');
-                        EDeviceType type = Tools.ModelStringToEnum(array.FirstOrDefault(s => s.StartsWith("NT"))?.Replace("NT: ", "").Split(':').LastOrDefault());
-                        string? url = array.FirstOrDefault(s => s.StartsWith("Location"))?.Replace("Location: ", "").Replace("http://", "") ?? null;
-                        string? ip = url?.Split(':')[0] ?? null;
-                        string? port = url?.Split(':')[1] ?? null;
-                        string? name = array.FirstOrDefault(s => s.StartsWith("nl-devicename"))?.Replace("nl-devicename: ", "") ?? null;
-                        string? id = array.FirstOrDefault(s => s.StartsWith("nl-deviceid"))?.Replace("nl-deviceid: ", "") ?? null;
-                        if (string.IsNullOrWhiteSpace(remoteAddress) || string.IsNullOrWhiteSpace(port) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id))
-                        {
-                            _logger?.LogDebug($"Device Discovered via SSDP but can't be parsed correctly: {message}");
-                            return;
-                        }
-                        else
-                        {
-                            var device = new DiscoveredDevice(remoteAddress, port, name, id, type);
-                            discoveredDevices.Add(device);
-                            _logger?.LogDebug($"Device Discovered via SSDP: {device}");
-                            DeviceDiscovered?.InvokeFailSafe(null, new DiscoveredEventArgs(device));
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogWarning("Not able to decode the SSDP Datagram", ex);
-                }
+                if (ipaddress.AddressFamily != AddressFamily.InterNetwork)
+                    continue;
+                IControlPoint _controlPoint = new ControlPoint(ipaddress);
+                runningSSDPClients[ipaddress] = _controlPoint;
+                _controlPoint.Start(token);
+                var observerNotify = _controlPoint.NotifyObservable();
+                var disposableNotify = observerNotify
+               .Subscribe(
+                   n =>
+                   {
+                       try
+                       {
+                           if (n.NT.Contains("nanoleaf"))
+                           {
+                               string? ip = n.Location.Host;
+                               string? port = n.Location.Port.ToString();
+                               string? name = n.Headers["NL-DEVICENAME"];
+                               string? id = n.Headers["NL-DEVICEID"];
+                               EDeviceType type = Tools.ModelStringToEnum(n.NT.Split(':')[1]);
+                               if (string.IsNullOrWhiteSpace(ip) || string.IsNullOrWhiteSpace(port) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id))
+                               {
+                                   _logger?.LogDebug($"Device Discovered via SSDP but can't be parsed correctly!");
+                                   return;
+                               }
+                               else
+                               {
+                                   if (discoveredDevices.Any(d => d.IP.Equals(ip)))
+                                       return;
+                                   var device = new DiscoveredDevice(ip, port, name, id, type);
+                                   discoveredDevices.Add(device);
+                                   _logger?.LogDebug($"Device Discovered via SSDP: {device}");
+                                   DeviceDiscovered?.InvokeFailSafe(null, new DiscoveredEventArgs(device));
+                               }
+                           }
+                       }
+                       catch (Exception ex)
+                       {
+                           _logger?.LogWarning("Not able to decode the SSDP Notification", ex);
+                       }
+                   }
+                   );
             }
         }
+
         public static void StopDiscoverySSDPTask()
         {
             _logger?.LogDebug("Request stop for SSDP DiscoverTask");
-            discoverySSDPTaskRunning = false;
-            for (int i = 0; i < 10; i++)
-            {
-                if (discoverSSDPTask?.IsCompleted ?? true)
-                    return;
-                _logger?.LogDebug("Await SSDP DiscoverTask stopped");
-                Task.Delay(100).GetAwaiter();
-            }
-            discoverSSDPTask = null;
+            foreach(var _controlPoint in runningSSDPClients.Select(k => k.Value))
+                _controlPoint?.Dispose();
+            runningSSDPClients.Clear();
+            _logger?.LogDebug("Await SSDP DiscoverTask stopped");
         }
         #endregion
 
@@ -266,167 +212,121 @@ namespace NanoleafAPI
         }
         #endregion
 
-        public static async Task<bool> Ping(string ip, string port)
+        public static async Task<Result<T>> SendRequest<T>(Request request, bool v1=true, [CallerMemberName] string? caller = null)
         {
-            bool result = false;
-            string address = $"http://{ip}:{port}/api/v1/";
-            using (HttpClient hc = new HttpClient())
+            using (HttpClient client = new HttpClient() { Timeout = new TimeSpan(0, 0, 0, 1,500) })
             {
+                Exception? exception = null;
+                T? deserialized = default;
+                bool success = false;
                 try
                 {
-                    StringContent queryString = new StringContent("");
-                    _logger?.LogDebug($"Request {nameof(Ping)} for \"{ip}\"");
-                    var response = await hc.PostAsync(address, queryString);
+                    string address = string.Empty;
+                    if (v1)
+                    {
+                        if (string.IsNullOrWhiteSpace(request.AuthToken))
+                            address = createUrl(request.IP, request.Port, request.Endpoint);
+                        else
+                            address = createUrl(request.IP, request.Port, request.AuthToken, request.Endpoint);
+                    }
+                    else
+                    {
+                        address = $"http://{request.IP}:{request.Port}/{request.Endpoint}";
+                    }
 
-                    _logger?.LogDebug($"Received Response for {nameof(Ping)}: {response.StatusCode}");
-                    return true;
+                    var req = new HttpRequestMessage(request.Method, address)
+                    {
+                        Content = new StringContent(request.Command?.ToString() ?? string.Empty)
+                    };
 
+                    _logger?.LogDebug($"Request {caller} for \"{request.IP}\"");
+                    var response = await client.SendAsync(req);
+                    if (request.ExpectedResponseStatusCode.Contains(response.StatusCode))
+                    {
+                        var content = await response.Content.ReadAsStringAsync();
+
+                        if (request.ExpectedResponseStatusCode.Contains(HttpStatusCode.NoContent))
+                            success = true;
+                        else
+                        {
+                            try
+                            {
+                                deserialized = JsonSerializer.Deserialize<T?>(content);
+                                success = true;
+                            }
+                            catch (Exception e)
+                            {
+                                exception = e;
+                            }
+                        }
+                        if (success)
+                        {
+                            if (deserialized != null)
+                                _logger?.LogDebug($"Received {caller} response:{Environment.NewLine}{response.StatusCode}{Environment.NewLine}Deserialized:{Environment.NewLine}{deserialized}");
+                            else
+                                _logger?.LogDebug($"Received {caller} response:{Environment.NewLine}{response.StatusCode}");
+                            return new Result<T>(request, response.StatusCode, deserialized);
+                        }
+                        else if (exception != null)
+                        {
+                            _logger?.LogWarning($"Exception on {caller} while deserialize response.{Environment.NewLine}Content:{Environment.NewLine}{content}{Environment.NewLine}Exception:{Environment.NewLine}{exception}");
+                            return new Result<T>(request, response.StatusCode, exception);
+                        }
+                        else
+                        {
+                            _logger?.LogWarning($"Received {caller} response can't be{Environment.NewLine}Deserialized:{Environment.NewLine}{content}");
+                            return new Result<T>(request, response.StatusCode);
+                        }
+                    }
                 }
                 catch (HttpRequestException he)
                 {
-                    _logger?.LogDebug(he, string.Empty);
+                    exception = he;
                 }
                 catch (Exception e)
                 {
-                    _logger?.LogWarning(e, string.Empty);
+                    exception = e;
+                }
+                if (exception != null)
+                {
+                    _logger?.LogWarning($"Exception on {caller} while Send Request.{Environment.NewLine}Exception:{Environment.NewLine}{exception}");
+                    return new Result<T>(request, exception);
                 }
             }
-            return result;
+            return new Result<T>(request);
+        }
+
+        public static async Task<Result<object>> Ping(string ip, string port)
+        {
+            var res = await SendRequest<object>(new Request(ip, port, null, string.Empty, null, HttpMethod.Post, HttpStatusCode.Unauthorized, HttpStatusCode.NoContent));
+            return res;
         }
 
         #region User
-        public static async Task<User?> AddUser(string ip, string port)
+        public static async Task<Result<User>> AddUser(string ip, string port)
         {
-            User? result = null;
-            string address = createUrl(ip, port, "new");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    StringContent queryString = new StringContent("");
-                    _logger?.LogDebug($"Request {nameof(AddUser)} for \"{ip}\"");
-                    var response = await hc.PostAsync(address, queryString);
-
-                    if (response.StatusCode == HttpStatusCode.OK)
-                    {
-                        var content = await response.Content.ReadAsStringAsync();
-                        result = JsonSerializer.Deserialize<User>(content);
-                        if (result.HasValue)
-                            _logger?.LogDebug($"Received {nameof(AddUser)} response: {content}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(AddUser)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(AddUser)}: {response}");
-
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<User>(new Request(ip, port, null, "new", null, HttpMethod.Post, HttpStatusCode.OK));
+            return res;
         }
-        public static async Task<bool?> DeleteUser(string ip, string port, string auth_token)
+        public static async Task<Result<object>> DeleteUser(string ip, string port, string auth_token)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, string.Empty);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(DeleteUser)} for \"{ip}\"");
-                    var response = await hc.DeleteAsync(address);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(DeleteUser)} response: successfull");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, string.Empty, null, HttpMethod.Delete, HttpStatusCode.NoContent));
+            return res;
         }
         #endregion
         #region All Panel Info
-        public static async Task<AllPanelInfo?> GetAllPanelInfo(string ip, string port, string auth_token)
+        public static async Task<Result<AllPanelInfo>> GetAllPanelInfo(string ip, string port, string auth_token)
         {
-            AllPanelInfo? result = null;
-            string address = createUrl(ip, port, auth_token, string.Empty);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetAllPanelInfo)} for \"{ip}\"");
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string content = await response.Content.ReadAsStringAsync();
-                        result = JsonSerializer.Deserialize<AllPanelInfo?>(content);
-                        if (result.HasValue)
-                            _logger?.LogDebug($"Received {nameof(GetAllPanelInfo)} response: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetAllPanelInfo)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetAllPanelInfo)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<AllPanelInfo>(new Request(ip, port, auth_token, string.Empty, null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
         }
         #endregion
         #region State
         #region On/Off
-        public static async Task<bool?> GetStateOnOff(string ip, string port, string auth_token)
+        public static async Task<Result<StateOnOff>> GetStateOnOff(string ip, string port, string auth_token)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "state/on");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetStateOnOff)} for \"{ip}\"");
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string content = await response.Content.ReadAsStringAsync();
-                        var state = JsonSerializer.Deserialize<StateOnOff?>(content);
-                        result = state?.On;
-                        if (result.HasValue)
-                            _logger?.LogDebug($"Received {nameof(GetStateOnOff)} response: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetStateOnOff)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetStateOnOff)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<StateOnOff>(new Request(ip, port, auth_token, "state/on", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
         }
         public static async Task<bool?> SetStateOnOff(string ip, string port, string auth_token, bool value)
         {
@@ -454,39 +354,10 @@ namespace NanoleafAPI
         }
         #endregion
         #region Brightness
-        public static async Task<float?> GetStateBrightness(string ip, string port, string auth_token)
+        public static async Task<Result<StateInfo>> GetStateBrightness(string ip, string port, string auth_token)
         {
-            float? result = null;
-            string address = createUrl(ip, port, auth_token, "state/brightness");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetStateBrightness)} for \"{ip}\"");
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string content = await response.Content.ReadAsStringAsync();
-                        var state = JsonSerializer.Deserialize<StateInfo?>(content);
-                        result = state?.Value;
-                        if (result.HasValue)
-                            _logger?.LogDebug($"Received {nameof(GetStateBrightness)}: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetStateBrightness)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetStateBrightness)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<StateInfo>(new Request(ip, port, auth_token, "state/brightness", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
         }
         public static async Task<bool?> SetStateBrightness(string ip, string port, string auth_token, float value, float duration = 0)
         {
@@ -538,39 +409,10 @@ namespace NanoleafAPI
         }
         #endregion
         #region Hue
-        public static async Task<float?> GetStateHue(string ip, string port, string auth_token)
+        public static async Task<Result<StateInfo>> GetStateHue(string ip, string port, string auth_token)
         {
-            float? result = null;
-            string address = createUrl(ip, port, auth_token, "state/hue");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetStateHue)} for \"{ip}\"");
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string content = await response.Content.ReadAsStringAsync();
-                        var state = JsonSerializer.Deserialize<StateInfo?>(content);
-                        result = state?.Value;
-                        if (result.HasValue)
-                            _logger?.LogDebug($"Received {nameof(GetStateHue)}: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetStateHue)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetStateHue)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<StateInfo>(new Request(ip, port, auth_token, "state/hue", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
         }
         public static async Task<bool?> SetStateHue(string ip, string port, string auth_token, float value)
         {
@@ -622,39 +464,10 @@ namespace NanoleafAPI
         }
         #endregion
         #region Saturation
-        public static async Task<float?> GetStateSaturation(string ip, string port, string auth_token)
+        public static async Task<Result<StateInfo>> GetStateSaturation(string ip, string port, string auth_token)
         {
-            float? result = null;
-            string address = createUrl(ip, port, auth_token, "state/sat");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetStateSaturation)} for \"{ip}\"");
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string content = await response.Content.ReadAsStringAsync();
-                        var state = JsonSerializer.Deserialize<StateInfo?>(content);
-                        result = state?.Value;
-                        if (result.HasValue)
-                            _logger?.LogDebug($"Received {nameof(GetStateSaturation)}: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetStateSaturation)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetStateSaturation)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<StateInfo>(new Request(ip, port, auth_token, "state/sat", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
         }
         public static async Task<bool?> SetStateSaturation(string ip, string port, string auth_token, float value)
         {
@@ -706,39 +519,10 @@ namespace NanoleafAPI
         }
         #endregion
         #region ColorTemperature
-        public static async Task<float?> GetStateColorTemperature(string ip, string port, string auth_token)
+        public static async Task<Result<StateInfo>> GetStateColorTemperature(string ip, string port, string auth_token)
         {
-            float? result = null;
-            string address = createUrl(ip, port, auth_token, "state/ct");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetStateColorTemperature)} for \"{ip}\"");
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string content = await response.Content.ReadAsStringAsync();
-                        var state = JsonSerializer.Deserialize<StateInfo?>(content);
-                        result = state?.Value;
-                        if (result.HasValue)
-                            _logger?.LogDebug($"Received {nameof(GetStateColorTemperature)}: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetStateColorTemperature)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetStateColorTemperature)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<StateInfo>(new Request(ip, port, auth_token, "state/ct", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
         }
         public static async Task<bool?> SetStateColorTemperature(string ip, string port, string auth_token, float value)
         {
@@ -805,11 +589,11 @@ namespace NanoleafAPI
                         if (result != null)
                         {
                             result = result.Replace("\"", "");
-                            _logger?.LogDebug($"Received {nameof(GetStateSaturation)}: {result}");
+                            _logger?.LogDebug($"Received {nameof(GetColorMode)}: {result}");
                         }
                     }
                     else
-                        _logger?.LogDebug($"Received Response for {nameof(GetStateSaturation)}: {response}");
+                        _logger?.LogDebug($"Received Response for {nameof(GetColorMode)}: {response}");
                 }
                 catch (HttpRequestException he)
                 {
@@ -908,76 +692,19 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static async Task<string[]?> GetEffectList(string ip, string port, string auth_token)
+        public static async Task<Result<IReadOnlyList<string>>> GetEffectList(string ip, string port, string auth_token)
         {
-            string address = createUrl(ip, port, auth_token, "effects/effectsList");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetEffectList)} for \"{ip}\"");
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string content = await response.Content.ReadAsStringAsync();
-                        var deserialized = JsonSerializer.Deserialize<IReadOnlyList<string>>(content);
-                        if (deserialized != null)
-                        {
-                            _logger?.LogDebug($"Received {nameof(GetEffectList)} response: {content}");
-                            return deserialized.ToArray();
-                        }
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetEffectList)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return null;
+            var res = await SendRequest<IReadOnlyList<string>>(new Request(ip, port, auth_token, "effects/effectsList", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
         }
         ///TODO 5.4.3. Write
         #endregion
 
         #region PanelLayout
-        public static async Task<float?> GetPanelLayoutGlobalOrientation(string ip, string port, string auth_token)
+        public static async Task<Result<StateInfo>> GetPanelLayoutGlobalOrientation(string ip, string port, string auth_token)
         {
-            float? result = null;
-            string address = createUrl(ip, port, auth_token, "panelLayout/globalOrientation");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetPanelLayoutGlobalOrientation)} for \"{ip}\"");
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string content = await response.Content.ReadAsStringAsync();
-                        var state = JsonSerializer.Deserialize<StateInfo?>(content);
-                        result = state?.Value;
-                        if (result.HasValue)
-                            _logger?.LogDebug($"Received {nameof(GetPanelLayoutGlobalOrientation)}: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetPanelLayoutGlobalOrientation)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetPanelLayoutGlobalOrientation)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<StateInfo>(new Request(ip, port, auth_token, "panelLayout/globalOrientation", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
         }
         public static async Task<bool?> SetPanelLayoutGlobalOrientation(string ip, string port, string auth_token, float value)
         {
@@ -1003,131 +730,30 @@ namespace NanoleafAPI
             }
             return result;
         }
-        public static async Task<Layout?> GetPanelLayoutLayout(string ip, string port, string auth_token)
+        public static async Task<Result<Layout>> GetPanelLayoutLayout(string ip, string port, string auth_token)
         {
-            Layout? result = null;
-            string address = createUrl(ip, port, auth_token, "panelLayout/layout");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetPanelLayoutLayout)} for \"{ip}\"");
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string content = await response.Content.ReadAsStringAsync();
-                        result = JsonSerializer.Deserialize<Layout?>(content);
-                        if (result.HasValue)
-                            _logger?.LogDebug($"Received {nameof(GetPanelLayoutLayout)}: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetPanelLayoutLayout)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetPanelLayoutLayout)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<Layout>(new Request(ip, port, auth_token, "panelLayout/layout", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
         }
         #endregion
         #region Identify
 
-        public static async Task<bool?> Identify(string ip, string port, string auth_token)
+        public static async Task<Result<object>> Identify(string ip, string port, string auth_token)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "identify");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(Identify)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, null);
-                    result = response?.StatusCode == HttpStatusCode.NoContent || response?.StatusCode == HttpStatusCode.OK;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(Identify)} response: successfull");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "identify", null, HttpMethod.Put, HttpStatusCode.NoContent, HttpStatusCode.OK));
+            return res;
         }
-        public static async Task<bool?> IdentifyAndroid(string ip)
+        public static async Task<Result<object>> IdentifyAndroid(string ip)
         {
-            bool? result = null;
-            string address = $"http://{ip}:{6517}/identify-android";
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    StringContent queryString = new StringContent("");
-                    _logger?.LogDebug($"Request {nameof(IdentifyAndroid)} for \"{ip}\"");
-                    var response = await hc.PostAsync(address, queryString);
-
-                    result = response?.StatusCode == HttpStatusCode.NoContent || response?.StatusCode == HttpStatusCode.OK;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(IdentifyAndroid)} response: successfull");
-
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, 6517.ToString(), null, "identify-android", null, HttpMethod.Post, HttpStatusCode.NoContent, HttpStatusCode.OK), false);
+            return res;
         }
         #endregion
         #region FirmwareUpgrade
-        public static async Task<FirmwareUpgrade?> GetFirmwareUpgrade(string ip, string port, string auth_token)
+        public static async Task<Result<FirmwareUpgrade>> GetFirmwareUpgrade(string ip, string port, string auth_token)
         {
-            FirmwareUpgrade? result = null;
-            string address = createUrl(ip, port, auth_token, "firmwareUpgrade");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetFirmwareUpgrade)} for \"{ip}\"");
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string content = await response.Content.ReadAsStringAsync();
-                        result = JsonSerializer.Deserialize<FirmwareUpgrade?>(content);
-                        if (result.HasValue)
-                            _logger?.LogDebug($"Received {nameof(GetFirmwareUpgrade)}: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetFirmwareUpgrade)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetFirmwareUpgrade)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<FirmwareUpgrade>(new Request(ip, port, auth_token, "firmwareUpgrade", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
         }
         #endregion
 
@@ -1452,7 +1078,7 @@ namespace NanoleafAPI
         {
             validateCredentials(ip, port);
 
-            if (string.IsNullOrWhiteSpace(path))
+            if (path == null) //If the Path is Empty, its correct!!!
                 throw new ArgumentException($"Property {nameof(path)} isn't Valid: {path}");
 
             return $"http://{ip}:{port}/api/v1/{path}";
@@ -1719,18 +1345,18 @@ namespace NanoleafAPI
             tokenSource.Cancel();
             Task.Delay(1000).GetAwaiter();
             tokenSource.Dispose();
-            discoverSSDPTask = null;
-            discoverySSDPTaskRunning = false;
 
             StopEventListener();
 
             tokenSource = new CancellationTokenSource();
             token = tokenSource.Token;
+            discoveredDevices.Clear();
             _logger?.LogDebug($"Shutdown done!");
         }
 #if DEBUG //Tests
         public static void Restart()
         {
+            Shutdown();
             shutdown = false;
         }
 #endif

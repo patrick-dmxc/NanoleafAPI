@@ -20,6 +20,7 @@ namespace NanoleafAPI_Tests
         public async Task TestDiscovery_SSDP()
         {
             await Task.Delay(500);
+            Communication.Restart();
             Stopwatch sw = new Stopwatch();
             sw.Start();
             bool eventFired = false;
@@ -47,12 +48,13 @@ namespace NanoleafAPI_Tests
         public async Task TestDiscovery_mDNS()
         {
             await Task.Delay(500);
+            Communication.Restart();
             Stopwatch sw = new Stopwatch();
             sw.Start();
             bool eventFired = false;
             Communication.DeviceDiscovered += (o, e) => { eventFired = true; };
             Communication.StartDiscoverymDNSTask();
-
+            
             while (Communication.DiscoveredDevices.Count == 0)
             {
                 if (sw.Elapsed.TotalSeconds > 180)
