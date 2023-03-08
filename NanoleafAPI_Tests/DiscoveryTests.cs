@@ -20,7 +20,9 @@ namespace NanoleafAPI_Tests
         public async Task TestDiscovery_SSDP()
         {
             await Task.Delay(500);
+#if DEBUG //Tests
             Communication.Restart();
+#endif
             Stopwatch sw = new Stopwatch();
             sw.Start();
             bool eventFired = false;
@@ -48,7 +50,9 @@ namespace NanoleafAPI_Tests
         public async Task TestDiscovery_mDNS()
         {
             await Task.Delay(500);
+#if DEBUG //Tests
             Communication.Restart();
+#endif
             Stopwatch sw = new Stopwatch();
             sw.Start();
             bool eventFired = false;
