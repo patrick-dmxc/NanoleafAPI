@@ -212,9 +212,9 @@ namespace NanoleafAPI
         }
         #endregion
 
-        public static async Task<Result<T>> SendRequest<T>(Request request, bool v1=true, [CallerMemberName] string? caller = null)
+        public static async Task<Result<T>> SendRequest<T>(Request request, bool v1 = true, [CallerMemberName] string? caller = null)
         {
-            using (HttpClient client = new HttpClient() { Timeout = new TimeSpan(0, 0, 0, 1,500) })
+            using (HttpClient client = new HttpClient() { Timeout = new TimeSpan(0, 0, 0, 1, 500) })
             {
                 Exception? exception = null;
                 T? deserialized = default;
@@ -234,12 +234,16 @@ namespace NanoleafAPI
                         address = $"http://{request.IP}:{request.Port}/{request.Endpoint}";
                     }
 
+                    string commandString = request.Command?.ToString() ?? string.Empty;
                     var req = new HttpRequestMessage(request.Method, address)
                     {
-                        Content = new StringContent(request.Command?.ToString() ?? string.Empty)
+                        Content = new StringContent(commandString)
                     };
 
-                    _logger?.LogDebug($"Request {caller} for \"{request.IP}\"");
+                    if (string.IsNullOrWhiteSpace(commandString))
+                        _logger?.LogDebug($"Request {caller} for Url:{Environment.NewLine}{address}");
+                    else
+                        _logger?.LogDebug($"Request {caller} for Url:{Environment.NewLine}{address}{Environment.NewLine}Command: {commandString}");
                     var response = await client.SendAsync(req);
                     if (request.ExpectedResponseStatusCode.Contains(response.StatusCode))
                     {
@@ -272,12 +276,10 @@ namespace NanoleafAPI
                             _logger?.LogWarning($"Exception on {caller} while deserialize response.{Environment.NewLine}Content:{Environment.NewLine}{content}{Environment.NewLine}Exception:{Environment.NewLine}{exception}");
                             return new Result<T>(request, response.StatusCode, exception);
                         }
-                        else
-                        {
-                            _logger?.LogWarning($"Received {caller} response can't be{Environment.NewLine}Deserialized:{Environment.NewLine}{content}");
-                            return new Result<T>(request, response.StatusCode);
-                        }
                     }
+                    _logger?.LogWarning($"Received {caller} response can't be Deserialized!");
+                    return new Result<T>(request, response.StatusCode);
+
                 }
                 catch (HttpRequestException he)
                 {
@@ -328,29 +330,10 @@ namespace NanoleafAPI
             var res = await SendRequest<StateOnOff>(new Request(ip, port, auth_token, "state/on", null, HttpMethod.Get, HttpStatusCode.OK));
             return res;
         }
-        public static async Task<bool?> SetStateOnOff(string ip, string port, string auth_token, bool value)
+        public static async Task<Result<object>> SetStateOnOff(string ip, string port, string auth_token, bool value)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "state");
-            string contentString = value ? "{\"on\" : {\"value\": true}}" : "{\"on\" : {\"value\": false}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetStateOnOff)} State for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetStateOnOff)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "state", new Command(new { on = new { value = value } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
         #endregion
         #region Brightness
@@ -359,53 +342,15 @@ namespace NanoleafAPI
             var res = await SendRequest<StateInfo>(new Request(ip, port, auth_token, "state/brightness", null, HttpMethod.Get, HttpStatusCode.OK));
             return res;
         }
-        public static async Task<bool?> SetStateBrightness(string ip, string port, string auth_token, float value, float duration = 0)
+        public static async Task<Result<object>> SetStateBrightness(string ip, string port, string auth_token, float value, float duration = 0)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "state");
-            string? contentString = "{\"brightness\": {\"value\": " + value + ", \"duration\": " + duration + "}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetStateBrightness)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetStateBrightness)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "state", new Command(new { brightness = new { value = value, duration = duration } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
-        public static async Task<bool?> SetStateBrightnessIncrement(string ip, string port, string auth_token, float value)
+        public static async Task<Result<object>> SetStateBrightnessIncrement(string ip, string port, string auth_token, float value)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "state");
-            string contentString = "{\"brightness\": {\"increment\": " + value + "}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetStateBrightnessIncrement)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetStateBrightnessIncrement)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "state", new Command(new { brightness = new { increment = value } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
         #endregion
         #region Hue
@@ -414,53 +359,15 @@ namespace NanoleafAPI
             var res = await SendRequest<StateInfo>(new Request(ip, port, auth_token, "state/hue", null, HttpMethod.Get, HttpStatusCode.OK));
             return res;
         }
-        public static async Task<bool?> SetStateHue(string ip, string port, string auth_token, float value)
+        public static async Task<Result<object>> SetStateHue(string ip, string port, string auth_token, float value)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "state");
-            string contentString = "{\"hue\" : {\"value\": " + value + "}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetStateHue)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetStateHue)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "state", new Command(new { hue = new { value = value } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
-        public static async Task<bool?> SetStateHueIncrement(string ip, string port, string auth_token, float value)
+        public static async Task<Result<object>> SetStateHueIncrement(string ip, string port, string auth_token, float value)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "state");
-            string contentString = "{\"hue\": {\"increment\": " + value + "}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetStateHueIncrement)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetStateHueIncrement)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "state", new Command(new { hue = new { increment = value } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
         #endregion
         #region Saturation
@@ -469,53 +376,15 @@ namespace NanoleafAPI
             var res = await SendRequest<StateInfo>(new Request(ip, port, auth_token, "state/sat", null, HttpMethod.Get, HttpStatusCode.OK));
             return res;
         }
-        public static async Task<bool?> SetStateSaturation(string ip, string port, string auth_token, float value)
+        public static async Task<Result<object>> SetStateSaturation(string ip, string port, string auth_token, float value)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "state");
-            string contentString = "{\"sat\" : {\"value\": " + value + "}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetStateSaturation)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetStateSaturation)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "state", new Command(new { sat = new { value = value } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
-        public static async Task<bool?> SetStateSaturationIncrement(string ip, string port, string auth_token, float value)
+        public static async Task<Result<object>> SetStateSaturationIncrement(string ip, string port, string auth_token, float value)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "state");
-            string contentString = "{\"sat\": {\"increment\": " + value + "}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetStateSaturationIncrement)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetStateSaturationIncrement)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "state", new Command(new { sat = new { increment = value } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
         #endregion
         #region ColorTemperature
@@ -524,173 +393,87 @@ namespace NanoleafAPI
             var res = await SendRequest<StateInfo>(new Request(ip, port, auth_token, "state/ct", null, HttpMethod.Get, HttpStatusCode.OK));
             return res;
         }
-        public static async Task<bool?> SetStateColorTemperature(string ip, string port, string auth_token, float value)
+        public static async Task<Result<object>> SetStateColorTemperature(string ip, string port, string auth_token, float value)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "state");
-            string contentString = "{\"ct\" : {\"value\": " + value + "}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetStateColorTemperature)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetStateColorTemperature)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "state", new Command(new { ct = new { value = value } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
-        public static async Task<bool?> SetStateColorTemperatureIncrement(string ip, string port, string auth_token, float value)
+        public static async Task<Result<object>> SetStateColorTemperatureIncrement(string ip, string port, string auth_token, float value)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "state");
-            string contentString = "{\"ct\": {\"increment\": " + value + "}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetStateColorTemperatureIncrement)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetStateColorTemperatureIncrement)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "state", new Command(new { ct = new { increment = value } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
         #endregion
         #region ColorMode
-        public static async Task<string?> GetColorMode(string ip, string port, string auth_token)
+        public static async Task<Result<string>> GetColorMode(string ip, string port, string auth_token)
         {
-            string? result = null;
-            string address = createUrl(ip, port, auth_token, "state/colorMode");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        result = await response.Content.ReadAsStringAsync();
-                        if (result != null)
-                        {
-                            result = result.Replace("\"", "");
-                            _logger?.LogDebug($"Received {nameof(GetColorMode)}: {result}");
-                        }
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetColorMode)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
-        }
-
-        public static async Task<bool?> SetColorMode(string ip, string port, string auth_token, string value)
-        {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "state/colorMode");
-            string contentString = "{" + $"\"select\": \"{value}\"" + "}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetColorMode)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetStateColorTemperatureIncrement)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<string>(new Request(ip, port, auth_token, "state/colorMode", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
         }
         #endregion
         #endregion
 
         #region Effects
-        public static async Task<string?> GetSelectedEffect(string ip, string port, string auth_token)
+        public static async Task<Result<string>> GetSelectedEffect(string ip, string port, string auth_token)
         {
-            string? result = null;
-            string address = createUrl(ip, port, auth_token, "effects/select");
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetSelectedEffect)} for \"{ip}\"");
-                    var response = await hc.GetAsync(address);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        result = await response.Content.ReadAsStringAsync();
-                        if (result != null)
-                        {
-                            result = result.Replace("\"", "");
-                            _logger?.LogDebug($"Received {nameof(GetStateSaturation)}: {result}");
-                        }
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetSelectedEffect)}: {response}");
-                }
-                catch (HttpRequestException he)
-                {
-                    _logger?.LogDebug(he, string.Empty);
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<string>(new Request(ip, port, auth_token, "effects/select", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+            //string? result = null;
+            //string address = createUrl(ip, port, auth_token, "effects/select");
+            //using (HttpClient hc = new HttpClient())
+            //{
+            //    try
+            //    {
+            //        _logger?.LogDebug($"Request {nameof(GetSelectedEffect)} for \"{ip}\"");
+            //        var response = await hc.GetAsync(address);
+            //        if (response?.StatusCode == HttpStatusCode.OK)
+            //        {
+            //            result = await response.Content.ReadAsStringAsync();
+            //            if (result != null)
+            //            {
+            //                result = result.Replace("\"", "");
+            //                _logger?.LogDebug($"Received {nameof(GetStateSaturation)}: {result}");
+            //            }
+            //        }
+            //        else
+            //            _logger?.LogDebug($"Received Response for {nameof(GetSelectedEffect)}: {response}");
+            //    }
+            //    catch (HttpRequestException he)
+            //    {
+            //        _logger?.LogDebug(he, string.Empty);
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        _logger?.LogWarning(e, string.Empty);
+            //    }
+            //}
+            //return result;
         }
-        public static async Task<bool?> SetSelectedEffect(string ip, string port, string auth_token, string value)
+        public static async Task<Result<object>> SetSelectedEffect(string ip, string port, string auth_token, string value)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "effects");
-            string contentString = "{" + $"\"select\": \"{value}\"" + "}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetSelectedEffect)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { select = value }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
+            //bool? result = null;
+            //string address = createUrl(ip, port, auth_token, "effects");
+            //string contentString = "{" + $"\"select\": \"{value}\"" + "}";
+            //HttpContent httpContent = new StringContent(contentString);
+            //using (HttpClient hc = new HttpClient())
+            //{
+            //    try
+            //    {
+            //        _logger?.LogDebug($"Request {nameof(SetSelectedEffect)} for \"{ip}\"");
+            //        var response = await hc.PutAsync(address, httpContent);
+            //        result = response?.StatusCode == HttpStatusCode.NoContent;
 
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetSelectedEffect)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            //        if (result == true)
+            //            _logger?.LogDebug($"Received {nameof(SetSelectedEffect)} response: successfull");
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        _logger?.LogWarning(e, string.Empty);
+            //    }
+            //}
+            //return result;
         }
         public static async Task<Result<IReadOnlyList<string>>> GetEffectList(string ip, string port, string auth_token)
         {
@@ -706,29 +489,10 @@ namespace NanoleafAPI
             var res = await SendRequest<StateInfo>(new Request(ip, port, auth_token, "panelLayout/globalOrientation", null, HttpMethod.Get, HttpStatusCode.OK));
             return res;
         }
-        public static async Task<bool?> SetPanelLayoutGlobalOrientation(string ip, string port, string auth_token, float value)
+        public static async Task<Result<object>> SetPanelLayoutGlobalOrientation(string ip, string port, string auth_token, float value)
         {
-            bool? result = false;
-            string address = createUrl(ip, port, auth_token, "panelLayout");
-            string contentString = "{\"globalOrientation\" : {\"value\": " + value + "}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetPanelLayoutGlobalOrientation)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetPanelLayoutGlobalOrientation)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "panelLayout", new Command(new { globalOrientation = new { value = value } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
         public static async Task<Result<Layout>> GetPanelLayoutLayout(string ip, string port, string auth_token)
         {
@@ -758,37 +522,10 @@ namespace NanoleafAPI
         #endregion
 
         #region Commands
-        public static async Task<Animations?> GetRequerstAll(string ip, string port, string auth_token)
+        public static async Task<Result<Animations>> GetRequerstAll(string ip, string port, string auth_token)
         {
-            Animations? result = null;
-            string address = createUrl(ip, port, auth_token, "effects");
-            string contentString = "{" + "\"write\":{ \"command\":\"requestAll\"} }";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetRequerstAll)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string? content = await response.Content.ReadAsStringAsync();
-                        if (content != null)
-                            result = JsonSerializer.Deserialize<Animations?>(content);
-                        if (result != null)
-                            _logger?.LogDebug($"Received {nameof(GetRequerstAll)}: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetRequerstAll)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetRequerstAll)}: {response}");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<Animations>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "requestAll" } }), HttpMethod.Put, HttpStatusCode.OK));
+            return res;
         }
         public static async Task<string?> GetTouchConfig(string ip, string port, string auth_token)
         {
@@ -951,58 +688,15 @@ namespace NanoleafAPI
         #endregion
 
         #region External Control (Streaming)
-        public static async Task<ExternalControlConnectionInfo?> SetExternalControlStreaming(string ip, string port, string auth_token, EDeviceType deviceType)
+        public static async Task<Result<ExternalControlConnectionInfo>> SetExternalControlStreaming(string ip, string port, string auth_token, EDeviceType deviceType)
         {
-            ExternalControlConnectionInfo? result = null;
-            string address = createUrl(ip, port,auth_token,"effects");
-            string contentString = "{\"write\": {\"command\": \"display\", \"animType\": \"extControl\", \"extControlVersion\": \"v2\"}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
+            var res = await SendRequest<ExternalControlConnectionInfo>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "display", animType = "extControl", extControlVersion = "v2" } }), HttpMethod.Put, HttpStatusCode.OK));
+            if (!res.Success)
             {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetExternalControlStreaming)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-
-                    switch (deviceType)
-                    {
-                        case EDeviceType.LightPanles:
-                            if (response?.StatusCode == HttpStatusCode.OK)
-                            {
-                                string content = await response.Content.ReadAsStringAsync();
-                                if (!string.IsNullOrWhiteSpace(content))
-                                    result = JsonSerializer.Deserialize<ExternalControlConnectionInfo?>(content);
-                            }
-                            else
-                                _logger?.LogDebug($"Received Response for {nameof(SetExternalControlStreaming)}: {response}");
-                            break;
-
-                        case EDeviceType.Shapes:
-                        case EDeviceType.Canvas:
-                        case EDeviceType.Elements:
-                        case EDeviceType.Lines:
-                        case EDeviceType.Essentials:
-                        default:
-                            if (response?.StatusCode == HttpStatusCode.NoContent)
-                            {
-                                result = new ExternalControlConnectionInfo(ip, 60222, "udp");
-                            }
-                            else
-                                _logger?.LogDebug($"Received Response for {nameof(SetExternalControlStreaming)}: {response}");
-                            break;
-                    }
-
-                    if (result.HasValue)
-                        _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)}: {result}");
-                    else
-                        _logger?.LogDebug($"Received {nameof(SetExternalControlStreaming)} response can't be Deserialized: {response?.Content}");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
+                if (res.ResponseValue.StreamIPAddress == null && res.ResponseValue.StreamProtocol == null && res.StatusCode == HttpStatusCode.NoContent)
+                    res = new Result<ExternalControlConnectionInfo>(res.Request, HttpStatusCode.OK, new ExternalControlConnectionInfo(ip, 60222, "udp"));
             }
-            return result;
+            return res;
         }
         public static byte[]? CreateStreamingData(IEnumerable<Panel> panels)
         {

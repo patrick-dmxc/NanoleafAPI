@@ -362,8 +362,8 @@ namespace NanoleafAPI
                 }
 
                 var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
-                if (eci.HasValue)
-                    externalControlInfo = eci;
+                if (eci.Success)
+                    externalControlInfo = eci.ResponseValue;
                 else
                     _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
 
@@ -377,8 +377,8 @@ namespace NanoleafAPI
             if (Tools.IsTokenValid(Auth_token))
             {
                 var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
-                if (eci != null)
-                    externalControlInfo = eci;
+                if (eci.Success)
+                    externalControlInfo = eci.ResponseValue;
                 else
                     _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
             }
@@ -591,14 +591,8 @@ namespace NanoleafAPI
                 if (string.IsNullOrWhiteSpace(effectName))
                     return false;
 
-                var ret = await Communication.SetSelectedEffect(IP, Port, Auth_token, effectName);
-
-                if (ret.HasValue)
-                {
-                    return (bool)ret!;
-                }
-                else
-                    return false;
+                var response = await Communication.SetSelectedEffect(IP, Port, Auth_token, effectName);
+                return response.Success;
             }
         }
 
@@ -644,7 +638,6 @@ namespace NanoleafAPI
                 if (SelectedEffectStored != null && !SelectedEffectStored.Equals("*Dynamic*"))
                 {
                     await Communication.SetSelectedEffect(IP, Port, Auth_token, SelectedEffectStored);
-                    await Communication.SetColorMode(IP, Port, Auth_token, ColorModeStored);
 
                     if (ColorModeStored != null && ColorModeStored.Equals("ct"))
                     {
@@ -659,7 +652,6 @@ namespace NanoleafAPI
                 else
                 {
                     // If the selected effect was "Dynamic" then a preview scene was active which can not be restored. Thus, set a default scene
-                    await Communication.SetColorMode(IP, Port, Auth_token, "ct");
                     await Communication.SetStateColorTemperature(IP, Port, Auth_token, 5000);
                 }
 
