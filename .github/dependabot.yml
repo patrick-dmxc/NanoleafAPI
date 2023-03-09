@@ -6,7 +6,17 @@
 version: 2
 updates:
   - package-ecosystem: "nuget"
-    directory: "/"
+    directory: "/NanoleafAPI/"
+    schedule:
+      interval: "daily"
+  open-pull-requests-limit: 5
+  - package-ecosystem: "nuget"
+    directory: "/Nanoleaf_Test/"
+    schedule:
+      interval: "daily"
+  open-pull-requests-limit: 5
+  - package-ecosystem: "nuget"
+    directory: "/Nanoleaf_Tests/"
     schedule:
       interval: "daily"
   open-pull-requests-limit: 5
