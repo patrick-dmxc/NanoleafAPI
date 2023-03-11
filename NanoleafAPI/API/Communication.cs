@@ -429,6 +429,27 @@ namespace NanoleafAPI
             var res = await SendRequest<IReadOnlyList<string>>(new Request(ip, port, auth_token, "effects/effectsList", null, HttpMethod.Get, HttpStatusCode.OK));
             return res;
         }
+
+        public static async Task<Result<Animation>> GetEffect(string ip, string port, string auth_token, string animName)
+        {
+            var res = await SendRequest<Animation>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "request", animName = animName } }), HttpMethod.Put, HttpStatusCode.OK));
+            return res;
+        }
+        public static async Task<Result<object>> RenameEffect(string ip, string port, string auth_token, string animName, string newName)
+        {
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "rename", animName = animName, newName = newName } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
+        }
+        public static async Task<Result<object>> AddEffect(string ip, string port, string auth_token, Animation animation)
+        {
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "add", @PAYLOAD=string.Empty } }, animation), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
+        }
+        public static async Task<Result<object>> DeleteEffect(string ip, string port, string auth_token, string animName)
+        {
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "delete", animName = animName } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
+        }
         ///TODO 5.4.3. Write
         #endregion
 
@@ -476,163 +497,41 @@ namespace NanoleafAPI
             var res = await SendRequest<Animations>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "requestAll" } }), HttpMethod.Put, HttpStatusCode.OK));
             return res;
         }
-        public static async Task<string?> GetTouchConfig(string ip, string port, string auth_token)
+        public static async Task<Result<object>> GetRequerstPlugins(string ip, string port, string auth_token)
         {
-            string? result = null;
-            string address = createUrl(ip, port, auth_token, "effects");
-            string contentString = "{" + "\"write\":{ \"command\":\"requestTouchConfig\"} }";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetTouchConfig)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string? content = await response.Content.ReadAsStringAsync();
-                        result = content;//JsonConvert.DeserializeObject<Layout>(content);
-                        if (result != null)
-                            _logger?.LogDebug($"Received {nameof(GetTouchConfig)}: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetTouchConfig)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetTouchConfig)}: {response}");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            ///ToDo Deserilazation
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "requestPlugins" } }), HttpMethod.Put, HttpStatusCode.OK));
+            return res;
         }
-        public static async Task<string?> GetTouchKillSwitch(string ip, string port, string auth_token)
+        public static async Task<Result<Config>> GetTouchConfig(string ip, string port, string auth_token)
         {
-            string? result = null;
-            string address = createUrl(ip, port, auth_token, "effects");
-            string contentString = "{" + "\"write\":{ \"command\":\"getTouchKillSwitch\"} }";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(GetTouchKillSwitch)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    if (response?.StatusCode == HttpStatusCode.OK)
-                    {
-                        string? content = await response.Content.ReadAsStringAsync();
-                        result = content;//JsonConvert.DeserializeObject<Layout>(content);
-                        if (result != null)
-                            _logger?.LogDebug($"Received {nameof(GetTouchKillSwitch)}: {result}");
-                        else
-                            _logger?.LogDebug($"Received {nameof(GetTouchKillSwitch)} response can't be Deserialized: {content}");
-                    }
-                    else
-                        _logger?.LogDebug($"Received Response for {nameof(GetTouchKillSwitch)}: {response}");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<Config>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "requestTouchConfig" } }), HttpMethod.Put, HttpStatusCode.OK));
+            return res;
         }
-        public static async Task<bool?> SetTouchKillSwitch(string ip, string port, string auth_token, bool enabled)
+        public static async Task<Result<Config>> GetTouchKillSwitch(string ip, string port, string auth_token)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "effects");
-            string contentString = "{" + "\"write\":{\"command\":\"setTouchKillSwitch\",\"touchKillSwitchOn\":" + enabled + "}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<Config>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "getTouchKillSwitch" } }), HttpMethod.Put, HttpStatusCode.OK));
+            return res;
         }
-        public static async Task<bool?> SetCommandControllerButtons(string ip, string port, string auth_token, bool enabled)
+        public static async Task<Result<object>> SetTouchKillSwitch(string ip, string port, string auth_token, bool enabled)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "effects");
-            string contentString = enabled ? "{" + "\"write\":{ \"command\":\"enableAllControllerButtons\"} }" : "{" + "\"write\":{ \"command\":\"disableAllControllerButtons\"} }";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetCommandControllerButtons)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetCommandControllerButtons)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "setTouchKillSwitch" , touchKillSwitchOn = enabled } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
-        public static async Task<bool?> SetCommandSceneChangeAnimation(string ip, string port, string auth_token, bool enabled)
+        public static async Task<Result<object>> SetControllerButtons(string ip, string port, string auth_token, bool enabled)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "effects");
-            string contentString = enabled ? "{\"write\":{ \"command\":\"enableSceneChangeAnimation\"} }" : "{\"write\":{ \"command\":\"disableSceneChangeAnimation\"} }";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = enabled ? "enableAllControllerButtons" : "disableAllControllerButtons" } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
-        public static async Task<bool?> SetCommandConfigureTouch(string ip, string port, string auth_token, bool enabled)
+        public static async Task<Result<object>> SetSceneChangeAnimation(string ip, string port, string auth_token, bool enabled)
         {
-            bool? result = null;
-            string address = createUrl(ip, port, auth_token, "effects");
-            string contentString = "{\"write\":{\"command\":\"configureTouch\",\"touchConfig\":{\"userSystemConfig\":{\"enabled\":" + enabled + "}}}}";
-            HttpContent httpContent = new StringContent(contentString);
-            using (HttpClient hc = new HttpClient())
-            {
-                try
-                {
-                    _logger?.LogDebug($"Request {nameof(SetCommandSceneChangeAnimation)} for \"{ip}\"");
-                    var response = await hc.PutAsync(address, httpContent);
-                    result = response?.StatusCode == HttpStatusCode.NoContent;
-
-                    if (result == true)
-                        _logger?.LogDebug($"Received {nameof(SetCommandSceneChangeAnimation)} response: successfull");
-                }
-                catch (Exception e)
-                {
-                    _logger?.LogWarning(e, string.Empty);
-                }
-            }
-            return result;
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = enabled ? "enableSceneChangeAnimation" : "disableSceneChangeAnimation" } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
+        }
+        public static async Task<Result<object>> SetConfigureTouch(string ip, string port, string auth_token, bool enabled)
+        {
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "configureTouch", touchConfig = new { userSystemConfig = new { enabled = enabled } } } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
         }
         #endregion
 

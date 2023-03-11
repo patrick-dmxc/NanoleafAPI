@@ -5,42 +5,77 @@ namespace NanoleafAPI
 {
     public readonly struct Animation
     {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("loop")]
-        public readonly bool? Loop { get; }
+        public readonly bool? Loop { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("version")]
-        public readonly string? Version { get; }
+        public readonly string? Version { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("animName")]
-        public readonly string? Name { get; }
+        public readonly string? Name { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("animType")]
-        public readonly string? Type { get; }
+        public readonly string? Type { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("animData")]
-        public readonly string? Data { get; }
+        public readonly string? Data { get; } = null;
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        [JsonPropertyName("colorType")]
+        public readonly string? ColorType { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("palette")]
-        public readonly IReadOnlyList<PaletteData>? Palette { get; }
-        [JsonPropertyName("brightnessRange")]
-        public readonly Range? BrightnessRange { get; }
-        [JsonPropertyName("transTime")]
-        public readonly Range? TransitionTime { get; }
-        [JsonPropertyName("delayTime")]
-        public readonly Range? DelayTime { get; }
+        public readonly IReadOnlyList<PaletteData>? Palette { get; } = null;
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        [JsonPropertyName("brightnessRange")]
+        public readonly Range? BrightnessRange { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        [JsonPropertyName("transTime")]
+        public readonly Range? TransitionTime { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        [JsonPropertyName("delayTime")]
+        public readonly Range? DelayTime { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("extControlVersion")]
-        public readonly string? ExternalControlVersion { get; }
+        public readonly string? ExternalControlVersion { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("clientIpAddress")]
-        public readonly string? ClientIpAddress { get; }
+        public readonly string? ClientIpAddress { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("clientUdpPort")]
-        public readonly string? ClientUdpPort { get; }
+        public readonly string? ClientUdpPort { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("logicalPanelsEnabled")]
-        public readonly bool? LogicalPanelsEnabled { get; }
+        public readonly bool? LogicalPanelsEnabled { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("hasOverlay")]
-        public readonly bool? HasOverlay { get; }
+        public readonly bool? HasOverlay { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("pluginType")]
-        public readonly string? PluginType { get; }
+        public readonly string? PluginType { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("pluginUuid")]
-        public readonly string? PluginUuid { get; }
+        public readonly string? PluginUuid { get; } = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("pluginOptions")]
-        public readonly IReadOnlyList<PluginOption>? PluginOptions { get; }
+        public readonly IReadOnlyList<PluginOption>? PluginOptions { get; } = null;
 
         [JsonConstructor]
         public Animation(
@@ -49,6 +84,7 @@ namespace NanoleafAPI
             string? name,
             string? type,
             string? data,
+            string? colorType,
             IReadOnlyList<PaletteData>? palette,
             Range? brightnessRange,
             Range? transitionTime,
@@ -66,6 +102,7 @@ namespace NanoleafAPI
             Name,
             Type,
             Data,
+            ColorType,
             Palette,
             BrightnessRange,
             TransitionTime,
@@ -83,6 +120,7 @@ namespace NanoleafAPI
             name,
             type,
             data,
+            colorType,
             palette,
             brightnessRange,
             transitionTime,
@@ -95,6 +133,15 @@ namespace NanoleafAPI
             pluginType,
             pluginUuid,
             pluginOptions);
+
+        public Animation(string name, string pluginUuid, string colorType = "HSB", string animType = "plugin", string version = "1.0")
+        {
+            this.Name = name;
+            this.PluginUuid = pluginUuid;
+            this.ColorType = colorType;
+            this.Type = animType;
+            this.Version = version;
+        }
         public readonly struct PaletteData
         {
             [JsonPropertyName("hue")]

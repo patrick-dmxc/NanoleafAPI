@@ -4,6 +4,7 @@ using EAttribute_StateEvent = NanoleafAPI.StateEvent.EAttribute;
 using EAttribute_LayoutEvent = NanoleafAPI.LayoutEvent.EAttribute;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace NanoleafAPI_Tests
 {
@@ -466,18 +467,105 @@ namespace NanoleafAPI_Tests
                 Assert.That(response.ResponseValue.FirmwareAvailability, Is.False);
             });
         }
+
         [Test]
-        public async Task TestCommands()
+        public async Task TestEffect()
+        {
+            const string testName = "TEST";
+            await Task.Delay(500);
+            var responseGetList = await Communication.GetEffectList(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGetList.Success, Is.True);
+            var effect = responseGetList.ResponseValue?.Last();
+            Assert.That(effect, Is.Not.Null);
+
+            var responseAddEffect = await Communication.AddEffect(IP, PORT, AUTH_TOKEN, new Animation(testName,"0000"));
+            Assert.That(responseAddEffect.Success, Is.True);
+
+            var responseGetEffect = await Communication.GetEffect(IP, PORT, AUTH_TOKEN, effect);
+            Assert.That(responseGetEffect.Success, Is.True);
+            Assert.That(responseGetEffect.ResponseValue.Name, Is.EqualTo(effect));
+
+            var responseSet=await Communication.RenameEffect(IP, PORT, AUTH_TOKEN,effect, testName);
+            Assert.That(responseSet.Success, Is.True);
+            responseGetEffect = await Communication.GetEffect(IP, PORT, AUTH_TOKEN, testName);
+            Assert.That(responseGetEffect.Success, Is.True);
+            Assert.That(responseGetEffect.ResponseValue.Name, Is.EqualTo(testName));
+
+            responseSet = await Communication.RenameEffect(IP, PORT, AUTH_TOKEN, testName, effect);
+            Assert.That(responseSet.Success, Is.True);
+            responseGetEffect = await Communication.GetEffect(IP, PORT, AUTH_TOKEN, effect);
+            Assert.That(responseGetEffect.Success, Is.True);
+            Assert.That(responseGetEffect.ResponseValue.Name, Is.EqualTo(effect));
+        }
+        [Test]
+        public async Task TestTouchConfig()
         {
             await Task.Delay(500);
-            Assert.That(await Communication.GetTouchConfig(IP, PORT, AUTH_TOKEN), Is.Not.Null);
-            Assert.That(await Communication.GetTouchKillSwitch(IP, PORT, AUTH_TOKEN), Is.Not.Null);
+            var responseGet = await Communication.GetTouchConfig(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.TouchConfig.HasValue, Is.True);
+            bool backup = responseGet.ResponseValue.TouchConfig.Value.UserSystemConfig.Enabled;
+
+            var responseSet = await Communication.SetConfigureTouch(IP, PORT, AUTH_TOKEN, true);
+            Assert.That(responseSet.Success, Is.True);
+            responseGet = await Communication.GetTouchConfig(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.TouchConfig.HasValue, Is.True);
+            Assert.That(responseGet.ResponseValue.TouchConfig.Value.UserSystemConfig.Enabled, Is.True);
+
+            responseSet = await Communication.SetConfigureTouch(IP, PORT, AUTH_TOKEN, false);
+            Assert.That(responseSet.Success, Is.True);
+            responseGet = await Communication.GetTouchConfig(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.TouchConfig.HasValue, Is.True);
+            Assert.That(responseGet.ResponseValue.TouchConfig.Value.UserSystemConfig.Enabled, Is.False);
+
+            responseSet = await Communication.SetConfigureTouch(IP, PORT, AUTH_TOKEN, backup);
+            Assert.That(responseSet.Success, Is.True);
+            responseGet = await Communication.GetTouchConfig(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.TouchConfig.HasValue, Is.True);
+            Assert.That(responseGet.ResponseValue.TouchConfig.Value.UserSystemConfig.Enabled, Is.EqualTo(backup));
+        }
+        [Test]
+        public async Task TestTouchKillSwitch()
+        {
+            await Task.Delay(500);
+            var responseGet = await Communication.GetTouchKillSwitch(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.TouchKillSwitchOn.HasValue, Is.True);
+
+            bool touchKillSwitchOn = responseGet.ResponseValue.TouchKillSwitchOn.Value;
+            var responsSet = await Communication.SetTouchKillSwitch(IP, PORT, AUTH_TOKEN, true);
+            Assert.That(responsSet.Success, Is.True);
+            responseGet = await Communication.GetTouchKillSwitch(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.TouchKillSwitchOn, Is.True);
+
+            responsSet = await Communication.SetTouchKillSwitch(IP, PORT, AUTH_TOKEN, false);
+            Assert.That(responsSet.Success, Is.True);
+            responseGet = await Communication.GetTouchKillSwitch(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.TouchKillSwitchOn, Is.False);
+
+            responsSet = await Communication.SetTouchKillSwitch(IP, PORT, AUTH_TOKEN, touchKillSwitchOn);
+            Assert.That(responsSet.Success, Is.True);
+            responseGet = await Communication.GetTouchKillSwitch(IP, PORT, AUTH_TOKEN);
+            Assert.That(responseGet.Success, Is.True);
+            Assert.That(responseGet.ResponseValue.TouchKillSwitchOn, Is.EqualTo(touchKillSwitchOn));
         }
         [Test]
         public async Task TestRequestAll()
         {
             await Task.Delay(500);
-            var response= await Communication.GetRequerstAll(IP, PORT, AUTH_TOKEN);
+            var response = await Communication.GetRequerstAll(IP, PORT, AUTH_TOKEN);
+            Assert.That(response.Success, Is.True);
+        }
+        [Test]
+        public async Task TestRequestPlugins()
+        {
+            await Task.Delay(500);
+            var response = await Communication.GetRequerstPlugins(IP, PORT, AUTH_TOKEN);
             Assert.That(response.Success, Is.True);
         }
     }

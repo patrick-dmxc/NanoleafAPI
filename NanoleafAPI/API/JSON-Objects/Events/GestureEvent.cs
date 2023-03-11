@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using NanoleafAPI.API;
+using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
@@ -8,15 +9,7 @@ namespace NanoleafAPI
         public readonly EGesture Gesture { get; }
         [JsonPropertyName("panelId")]
         public readonly int PanelID { get; }
-        public enum EGesture
-        {
-            SingleTap,
-            DoubleTap,
-            SwipeUp,
-            SwipeDown,
-            SwipeLeft,
-            SwipeRight
-        }
+        
 
         [JsonConstructor]
         public GestureEvent(EGesture gesture, int panelID) => (Gesture, PanelID) = (gesture, panelID);
