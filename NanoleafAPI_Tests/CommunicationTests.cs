@@ -4,7 +4,7 @@ using EAttribute_StateEvent = NanoleafAPI.StateEvent.EAttribute;
 using EAttribute_LayoutEvent = NanoleafAPI.LayoutEvent.EAttribute;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using System.Linq;
+using System.Text.Json;
 
 namespace NanoleafAPI_Tests
 {
@@ -469,6 +469,25 @@ namespace NanoleafAPI_Tests
         }
 
         [Test]
+        public async Task TestRequerstPlugins()
+        {
+            string cmd = "{\"animName\":\"TEST\",\"animType\":\"plugin\",\"brightnessRange\":{},\"colorType\":\"HSB\",\"delayTime\":{},\"direction\":\"\",\"explodeFactor\":0,\"flowFactor\":0,\"loop\":false,\"palette\":[{\"hue\":227,\"saturation\":100,\"brightness\":99},{\"hue\":104,\"saturation\":100,\"brightness\":100},{\"hue\":24,\"saturation\":100,\"brightness\":100},{\"hue\":275,\"saturation\":100,\"brightness\":100},{\"hue\":54,\"saturation\":91,\"brightness\":100},{\"hue\":311,\"saturation\":100,\"brightness\":100},{\"hue\":0,\"saturation\":0,\"brightness\":100}],\"transTime\":{},\"pluginOptions\":[{\"name\":\"transTime\",\"type\":\"int\",\"defaultValue\":24,\"minValue\":1,\"maxValue\":600,\"value\":24},{\"name\":\"delayTime\",\"type\":\"int\",\"defaultValue\":0,\"minValue\":0,\"maxValue\":600,\"value\":0}],\"windowSize\":0,\"version\":\"2.0\",\"pluginUuid\":\"ba632d3e-9c2b-4413-a965-510c839b3f71\",\"pluginType\":\"color\",\"isBasic\":false,\"ct\":0,\"isFavourite\":false,\"isRenaming\":false,\"command\":\"add\"}";
+            var animation = JsonSerializer.Deserialize<Animation>(cmd);
+            const string testName = "TEST";
+
+            var responseAddEffect = await Communication.AddEffect(IP, PORT, AUTH_TOKEN, animation);
+
+            var responseGetEffect = await Communication.GetEffect(IP, PORT, AUTH_TOKEN, testName);
+
+            var responseDeleteEffect = await Communication.DeleteEffect(IP, PORT, AUTH_TOKEN, testName);
+            Assert.Multiple(() =>
+            {
+                Assert.That(responseAddEffect.Success, Is.True);
+                Assert.That(responseGetEffect.Success, Is.True);
+                Assert.That(responseDeleteEffect.Success, Is.True);
+            });
+        }
+        [Test]
         public async Task TestEffect()
         {
             const string testName = "TEST";
@@ -478,8 +497,6 @@ namespace NanoleafAPI_Tests
             var effect = responseGetList.ResponseValue?.Last();
             Assert.That(effect, Is.Not.Null);
 
-            var responseAddEffect = await Communication.AddEffect(IP, PORT, AUTH_TOKEN, new Animation(testName,"0000"));
-            Assert.That(responseAddEffect.Success, Is.True);
 
             var responseGetEffect = await Communication.GetEffect(IP, PORT, AUTH_TOKEN, effect);
             Assert.That(responseGetEffect.Success, Is.True);
@@ -558,14 +575,14 @@ namespace NanoleafAPI_Tests
         public async Task TestRequestAll()
         {
             await Task.Delay(500);
-            var response = await Communication.GetRequerstAll(IP, PORT, AUTH_TOKEN);
+            var response = await Communication.RequerstAll(IP, PORT, AUTH_TOKEN);
             Assert.That(response.Success, Is.True);
         }
         [Test]
         public async Task TestRequestPlugins()
         {
             await Task.Delay(500);
-            var response = await Communication.GetRequerstPlugins(IP, PORT, AUTH_TOKEN);
+            var response = await Communication.RequerstPlugins(IP, PORT, AUTH_TOKEN);
             Assert.That(response.Success, Is.True);
         }
     }

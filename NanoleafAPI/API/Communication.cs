@@ -254,7 +254,7 @@ namespace NanoleafAPI
                         else
                         {
                             try
-                            {
+                             {
                                 deserialized = JsonSerializer.Deserialize<T?>(content);
                                 success = true;
                             }
@@ -492,15 +492,14 @@ namespace NanoleafAPI
         #endregion
 
         #region Commands
-        public static async Task<Result<Animations>> GetRequerstAll(string ip, string port, string auth_token)
+        public static async Task<Result<Animations>> RequerstAll(string ip, string port, string auth_token)
         {
             var res = await SendRequest<Animations>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "requestAll" } }), HttpMethod.Put, HttpStatusCode.OK));
             return res;
         }
-        public static async Task<Result<object>> GetRequerstPlugins(string ip, string port, string auth_token)
+        public static async Task<Result<Plugins>> RequerstPlugins(string ip, string port, string auth_token)
         {
-            ///ToDo Deserilazation
-            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "requestPlugins" } }), HttpMethod.Put, HttpStatusCode.OK));
+            var res = await SendRequest<Plugins>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "requestPlugins" } }), HttpMethod.Put, HttpStatusCode.OK));
             return res;
         }
         public static async Task<Result<Config>> GetTouchConfig(string ip, string port, string auth_token)

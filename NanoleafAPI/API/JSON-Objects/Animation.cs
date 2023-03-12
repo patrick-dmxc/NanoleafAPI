@@ -1,25 +1,24 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public readonly struct Animation
+    public struct Animation
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("loop")]
-        public readonly bool? Loop { get; } = null;
+        public readonly bool Loop { get; } = false;
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("version")]
-        public readonly string? Version { get; } = null;
+        public readonly string Version { get; } = "2.0";
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("animName")]
-        public readonly string? Name { get; } = null;
+        public readonly string Name { get; } = string.Empty;
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("animType")]
-        public readonly string? Type { get; } = null;
+        public readonly string Type { get; } = string.Empty;
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("animData")]
@@ -27,7 +26,7 @@ namespace NanoleafAPI
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("colorType")]
-        public readonly string? ColorType { get; } = null;
+        public readonly string ColorType { get; } = string.Empty;
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         [JsonPropertyName("palette")]
@@ -79,12 +78,12 @@ namespace NanoleafAPI
 
         [JsonConstructor]
         public Animation(
-            bool? loop,
-            string? version,
-            string? name,
-            string? type,
+            bool loop,
+            string version,
+            string name,
+            string type,
             string? data,
-            string? colorType,
+            string colorType,
             IReadOnlyList<PaletteData>? palette,
             Range? brightnessRange,
             Range? transitionTime,
@@ -134,27 +133,15 @@ namespace NanoleafAPI
             pluginUuid,
             pluginOptions);
 
-        public Animation(string name, string pluginUuid, string colorType = "HSB", string animType = "plugin", string version = "1.0")
+        public Animation(string name, string pluginUuid, string colorType = "HSB", string animType = "plugin", string pluginType = "rhythm", string version = "2.0", IReadOnlyList<PaletteData>? palette = null, IReadOnlyList<PluginOption>? pluginOptions = null)
         {
             this.Name = name;
             this.PluginUuid = pluginUuid;
             this.ColorType = colorType;
             this.Type = animType;
             this.Version = version;
-        }
-        public readonly struct PaletteData
-        {
-            [JsonPropertyName("hue")]
-            public readonly float Hue { get; }
-            [JsonPropertyName("saturation")]
-            public readonly float Saturation { get; }
-            [JsonPropertyName("brightness")]
-            public readonly float Brightness { get; }
-            [JsonPropertyName("probability")]
-            public readonly float? Probability { get; }
-
-            [JsonConstructor]
-            public PaletteData(float hue, float saturation, float brightness, float? probability) => (Hue, Saturation, Brightness, Probability) = (hue, saturation, brightness, probability);
+            this.Palette = palette;
+            this.PluginOptions = pluginOptions;
         }
         public readonly struct Range
         {
@@ -169,42 +156,6 @@ namespace NanoleafAPI
 
             [JsonConstructor]
             public Range(float hue, float saturation, float brightness, float probability) => (Hue, Saturation, Brightness, Probability) = (hue, saturation, brightness, probability);
-        }
-        public readonly struct PluginOption
-        {
-            [JsonPropertyName("name")]
-            public readonly string Name { get; }
-            [JsonPropertyName("value")]
-            public readonly object Value { get; }
-
-            public readonly bool? Bool { get; } = null;
-            public readonly double? Number { get; } = null;
-            public readonly string? String { get; } = null;
-
-            [JsonConstructor]
-            public PluginOption(string name, object value)
-            {
-                Name = name;
-                Value = value;
-                if (value is JsonElement json)
-                    switch (json.ValueKind)
-                    {
-                        case JsonValueKind.Number:
-                            double number;
-                            json.TryGetDouble(out number);
-                            Number = number;
-                            break;
-
-                        case JsonValueKind.False:
-                        case JsonValueKind.True:
-                            Bool = json.GetBoolean();
-                            break;
-
-                        case JsonValueKind.String:
-                            String = json.GetString();
-                            break;
-                    }
-            }
         }
     }
 }
