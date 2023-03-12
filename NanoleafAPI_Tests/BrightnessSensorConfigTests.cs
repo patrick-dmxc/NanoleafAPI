@@ -38,7 +38,7 @@ namespace NanoleafAPI_Tests
             Assert.That(responseGet.ResponseValue.BrightnessSensorConfig.HasValue, Is.True);
             var resValue = responseGet.ResponseValue.BrightnessSensorConfig.Value;
             Assert.That(resValue.Enabled, Is.True);
-            Assert.That(resValue.BrightnessSensorMode, Is.EqualTo(0));
+            Assert.That(resValue.BrightnessSensorMode, Is.EqualTo(EBrightnessMode.Atmospheric));
             Assert.That(resValue.UserMaxBrightness, Is.EqualTo(95));
             Assert.That(resValue.UserMinBrightness, Is.EqualTo(5));
 
