@@ -13,8 +13,12 @@ namespace NanoleafAPI
         [JsonPropertyName("touchKillSwitchOn")]
         public readonly bool? TouchKillSwitchOn { get; } = null;
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        [JsonPropertyName("brightnessSensorConfig")]
+        public readonly BrightnessSensorConfig? BrightnessSensorConfig { get; } = null;
+
         [JsonConstructor]
-        public Config(TouchConfig? touchConfig, bool? touchKillSwitchOn) => (TouchConfig, TouchKillSwitchOn) = (touchConfig, touchKillSwitchOn);
+        public Config(TouchConfig? touchConfig, bool? touchKillSwitchOn, BrightnessSensorConfig? brightnessSensorConfig) => (TouchConfig, TouchKillSwitchOn, BrightnessSensorConfig) = (touchConfig, touchKillSwitchOn, brightnessSensorConfig);
         public override string ToString()
         {
             return JsonSerializer.Serialize(this);

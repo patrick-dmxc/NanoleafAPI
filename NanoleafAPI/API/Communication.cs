@@ -581,6 +581,18 @@ namespace NanoleafAPI
             var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "configureTouch", touchConfig = new { userSystemConfig = new { enabled = enabled } } } }), HttpMethod.Put, HttpStatusCode.NoContent));
             return res;
         }
+
+
+        public static async Task<Result<Config>> GetBrightnessSensorConfig(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<Config>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "requestBrightnessSensorConfig" } }), HttpMethod.Put, HttpStatusCode.OK));
+            return res;
+        }
+        public static async Task<Result<object>> SetBrightnessSensorConfig(string ip, string port, string auth_token, BrightnessSensorConfig brightnessSensorConfig)
+        {
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "setBrightnessSensorConfig", brightnessSensorConfig = brightnessSensorConfig } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
+        }
         #endregion
 
         #region External Control (Streaming)
