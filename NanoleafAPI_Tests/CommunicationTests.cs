@@ -18,7 +18,7 @@ namespace NanoleafAPI_Tests
         public void Setup()
         {
             Tools.LoggerFactory = new TestLoggerFactory();
-            __logger = Tools.LoggerFactory.CreateLogger(nameof(Communication));
+            __logger = Tools.LoggerFactory.CreateLogger(nameof(CommunicationTests));
             Communication.RegisterIPAddress(IPAddress.Any);
         }
         [Test]

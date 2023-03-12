@@ -1,5 +1,6 @@
 ﻿using ISSDP.UPnP.PCL.Interfaces.Service;
 using Microsoft.Extensions.Logging;
+using NanoleafAPI.API;
 using SSDP.UPnP.PCL.Service;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
@@ -8,6 +9,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.X86;
 using System.Text.Json;
 using Zeroconf;
 using static NanoleafAPI.TouchEvent;
@@ -450,7 +452,54 @@ namespace NanoleafAPI
             var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "delete", animName = animName } }), HttpMethod.Put, HttpStatusCode.NoContent));
             return res;
         }
-        ///TODO 5.4.3. Write
+        #endregion
+
+        #region Rhythm
+        public static async Task<Result<bool>> GetRhythmConnected(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<bool>(new Request(ip, port, auth_token, "rhythm/rhythmConnected", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+        public static async Task<Result<bool>> GetRhythmActive(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<bool>(new Request(ip, port, auth_token, "rhythm/rhythmActive", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+        public static async Task<Result<int>> GetRhythmID(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<int>(new Request(ip, port, auth_token, "rhythm/rhythmId", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+        public static async Task<Result<string>> GetRhythmHardwareVersion(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<string>(new Request(ip, port, auth_token, "rhythm/hardwareVersion", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+        public static async Task<Result<string>> GetRhythmFirmwareVersion(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<string>(new Request(ip, port, auth_token, "rhythm/firmwareVersion", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+        public static async Task<Result<bool>> GetRhythmAuxAvailable(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<bool>(new Request(ip, port, auth_token, "rhythm/auxAvailable", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+        public static async Task<Result<ERythemMode>> GetRhythmMode(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<ERythemMode>(new Request(ip, port, auth_token, "rhythm/rhythmMode", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+        public static async Task<Result<object>> SetRhythmMode(string ip, string port, string auth_token, ERythemMode mode)
+        {
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "rhythm/rhythmMode", new Command(new { rhythmMode = (byte)mode }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
+        }
+        public static async Task<Result<RythmPosition>> GetRhythmPosition(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<RythmPosition>(new Request(ip, port, auth_token, "rhythm/rhythmPos", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
         #endregion
 
         #region PanelLayout
