@@ -5,6 +5,7 @@ using EAttribute_LayoutEvent = NanoleafAPI.LayoutEvent.EAttribute;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using NanoleafAPI.API;
 
 namespace NanoleafAPI_Tests
 {
@@ -521,28 +522,28 @@ namespace NanoleafAPI_Tests
             var responseGet = await Communication.GetTouchConfig(IP, PORT, AUTH_TOKEN);
             Assert.That(responseGet.Success, Is.True);
             Assert.That(responseGet.ResponseValue.TouchConfig.HasValue, Is.True);
-            bool backup = responseGet.ResponseValue.TouchConfig.Value.UserSystemConfig.Enabled;
+            var backup = responseGet.ResponseValue.TouchConfig.Value.UserSystemConfig;
 
-            var responseSet = await Communication.SetConfigureTouch(IP, PORT, AUTH_TOKEN, true);
+            var responseSet = await Communication.SetConfigureTouch(IP, PORT, AUTH_TOKEN, new TouchConfig(new UserSystemConfig(true, new GestureAction(EGesture.DoubleTap, EAction.Power), new GestureAction(EGesture.SwipeDown, EAction.Power), new GestureAction(EGesture.SwipeUp, EAction.Power), new GestureAction(EGesture.SwipeLeft, EAction.Power), new GestureAction(EGesture.SwipeRight, EAction.Power))));
             Assert.That(responseSet.Success, Is.True);
             responseGet = await Communication.GetTouchConfig(IP, PORT, AUTH_TOKEN);
             Assert.That(responseGet.Success, Is.True);
             Assert.That(responseGet.ResponseValue.TouchConfig.HasValue, Is.True);
             Assert.That(responseGet.ResponseValue.TouchConfig.Value.UserSystemConfig.Enabled, Is.True);
 
-            responseSet = await Communication.SetConfigureTouch(IP, PORT, AUTH_TOKEN, false);
+            responseSet = await Communication.SetConfigureTouch(IP, PORT, AUTH_TOKEN, new TouchConfig(new UserSystemConfig(false, new GestureAction(EGesture.DoubleTap, EAction.Power), new GestureAction(EGesture.SwipeDown, EAction.Power), new GestureAction(EGesture.SwipeUp, EAction.Power), new GestureAction(EGesture.SwipeLeft, EAction.Power), new GestureAction(EGesture.SwipeRight, EAction.Power))));
             Assert.That(responseSet.Success, Is.True);
             responseGet = await Communication.GetTouchConfig(IP, PORT, AUTH_TOKEN);
             Assert.That(responseGet.Success, Is.True);
             Assert.That(responseGet.ResponseValue.TouchConfig.HasValue, Is.True);
             Assert.That(responseGet.ResponseValue.TouchConfig.Value.UserSystemConfig.Enabled, Is.False);
 
-            responseSet = await Communication.SetConfigureTouch(IP, PORT, AUTH_TOKEN, backup);
+            responseSet = await Communication.SetConfigureTouch(IP, PORT, AUTH_TOKEN, new TouchConfig(backup));
             Assert.That(responseSet.Success, Is.True);
             responseGet = await Communication.GetTouchConfig(IP, PORT, AUTH_TOKEN);
             Assert.That(responseGet.Success, Is.True);
             Assert.That(responseGet.ResponseValue.TouchConfig.HasValue, Is.True);
-            Assert.That(responseGet.ResponseValue.TouchConfig.Value.UserSystemConfig.Enabled, Is.EqualTo(backup));
+            Assert.That(responseGet.ResponseValue.TouchConfig.Value.UserSystemConfig, Is.EqualTo(backup));
         }
         [Test]
         public async Task TestTouchKillSwitch()

@@ -576,9 +576,9 @@ namespace NanoleafAPI
             var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = enabled ? "enableSceneChangeAnimation" : "disableSceneChangeAnimation" } }), HttpMethod.Put, HttpStatusCode.NoContent));
             return res;
         }
-        public static async Task<Result<object>> SetConfigureTouch(string ip, string port, string auth_token, bool enabled)
+        public static async Task<Result<object>> SetConfigureTouch(string ip, string port, string auth_token, TouchConfig touchConfig)
         {
-            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "configureTouch", touchConfig = new { userSystemConfig = new { enabled = enabled } } } }), HttpMethod.Put, HttpStatusCode.NoContent));
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "configureTouch", touchConfig = touchConfig } }), HttpMethod.Put, HttpStatusCode.NoContent));
             return res;
         }
 

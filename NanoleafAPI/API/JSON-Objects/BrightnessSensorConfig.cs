@@ -9,7 +9,7 @@ namespace NanoleafAPI
         public readonly bool Enabled { get; }
 
         [JsonPropertyName("brightnessSensorMode")]
-        public readonly byte BrightnessSensorMode { get; }
+        public readonly EBrightnessMode BrightnessSensorMode { get; }
 
         [JsonPropertyName("userMaxBrightness")]
         public readonly float UserMaxBrightness { get; }
@@ -27,7 +27,7 @@ namespace NanoleafAPI
         [JsonConstructor]
         public BrightnessSensorConfig(
             bool enabled,
-            byte brightnessSensorMode,
+            EBrightnessMode brightnessSensorMode,
             float userMaxBrightness,
             float userMinBrightness,
             bool? isCalibrated,
@@ -48,7 +48,7 @@ namespace NanoleafAPI
             isCalibrating);
         public BrightnessSensorConfig(
             bool enabled,
-            byte brightnessSensorMode,
+            EBrightnessMode brightnessSensorMode,
             float userMaxBrightness,
             float userMinBrightness
             ) => (
@@ -65,5 +65,10 @@ namespace NanoleafAPI
         {
             return JsonSerializer.Serialize(this);
         }
+    }
+    public enum EBrightnessMode : byte
+    {
+        Atmospheric = 0,
+        Functional = 1
     }
 }

@@ -32,7 +32,7 @@ namespace NanoleafAPI_Tests
             Assert.That(responseGet.ResponseValue.BrightnessSensorConfig.HasValue, Is.True);
             BrightnessSensorConfig backup = responseGet.ResponseValue.BrightnessSensorConfig.Value;
 
-            var responseSet = await Communication.SetBrightnessSensorConfig(IP, PORT, AUTH_TOKEN, new BrightnessSensorConfig(true, 0, 95, 5));
+            var responseSet = await Communication.SetBrightnessSensorConfig(IP, PORT, AUTH_TOKEN, new BrightnessSensorConfig(true, EBrightnessMode.Atmospheric, 95, 5));
             Assert.That(responseSet.Success, Is.True);
             responseGet = await Communication.GetBrightnessSensorConfig(IP, PORT, AUTH_TOKEN);
             Assert.That(responseGet.ResponseValue.BrightnessSensorConfig.HasValue, Is.True);
