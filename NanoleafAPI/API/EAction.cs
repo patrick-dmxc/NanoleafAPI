@@ -9,14 +9,12 @@ namespace NanoleafAPI.API
         UNKNOWN,
         Power,
         BrightnessUp,
-        BrightnessDown
-
-        ///ToDo Missing SystemActions
-        //"ncs"
-        //"nrs"
-        //"nrdms"
-        //"pcs"
-        //"prs"
+        BrightnessDown,
+        NextColorScene,
+        NextRythmScene,
+        NextRandomScene,
+        PreviousColorScenee,
+        PreviousRythmScene
     }
     public class EActionConverter : JsonConverter<EAction>
     {
@@ -42,20 +40,16 @@ namespace NanoleafAPI.API
                     return EAction.BrightnessUp;
                 case "bd":
                     return EAction.BrightnessDown;
-
-                ///ToDo 
                 case "ncs":
-                    return EAction.UNKNOWN;
+                    return EAction.NextColorScene;
                 case "nrs":
-                    return EAction.UNKNOWN;
+                    return EAction.NextRythmScene;
                 case "nrdms":
-                    return EAction.UNKNOWN;
+                    return EAction.NextRandomScene;
                 case "pcs":
-                    return EAction.UNKNOWN;
+                    return EAction.PreviousColorScenee;
                 case "prs":
-                    return EAction.UNKNOWN;
-
-
+                    return EAction.PreviousRythmScene;
             }
 
             return EAction.UNKNOWN;
@@ -75,23 +69,21 @@ namespace NanoleafAPI.API
                 case EAction.BrightnessDown:
                     val = "bd";
                     break;
-
-                ///ToDo 
-                //case EAction.UNKNOWN:
-                //    val = "ncs";
-                //    break;
-                //case EAction.UNKNOWN:
-                //    val = "nrs";
-                //    break;
-                //case EAction.UNKNOWN:
-                //    val = "nrdms";
-                //    break;
-                //case EAction.UNKNOWN:
-                //    val = "pcs";
-                //    break;
-                //case EAction.UNKNOWN:
-                //    val = "prs";
-                //    break;
+                case EAction.NextColorScene:
+                    val = "ncs";
+                    break;
+                case EAction.NextRythmScene:
+                    val = "nrs";
+                    break;
+                case EAction.NextRandomScene:
+                    val = "nrdms";
+                    break;
+                case EAction.PreviousColorScenee:
+                    val = "pcs";
+                    break;
+                case EAction.PreviousRythmScene:
+                    val = "prs";
+                    break;
             }
 
             writer.WriteStringValue(val);
