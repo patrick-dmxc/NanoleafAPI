@@ -271,7 +271,14 @@ namespace NanoleafAPI
                         break;
                     }
                     else
+                    {
                         _logger?.LogInformation($"Device({IP}) can't obtain AuthToken");
+                        if (string.Equals("6517", this.Port))
+                        {
+                            _logger?.LogInformation($"Port is: {this.Port}, falback to 16021");
+                            this.Port = "16021";
+                        }
+                    }
                 }
                 catch (Exception e)
                 {
