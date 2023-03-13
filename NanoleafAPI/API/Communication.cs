@@ -80,61 +80,67 @@ namespace NanoleafAPI
 
         public static void StartDiscoverySSDPTask()
         {
-            //if (_controlPoint != null)
-            //    return;
-            // Get host name
-            String strHostName = Dns.GetHostName();
-
-            // Find host by name
-            IPHostEntry iphostentry = Dns.GetHostByName(strHostName);
-
-            // Enumerate IP addresses
-            foreach (IPAddress ipaddress in iphostentry.AddressList)
+            try
             {
-                if (ipaddress.AddressFamily != AddressFamily.InterNetwork)
-                    continue;
-                IControlPoint _controlPoint = new ControlPoint(ipaddress);
-                runningSSDPClients[ipaddress] = _controlPoint;
-                _controlPoint.Start(token);
-                var observerNotify = _controlPoint.NotifyObservable();
-                var disposableNotify = observerNotify
-               .Subscribe(
-                   n =>
-                   {
-                       try
+                //if (_controlPoint != null)
+                //    return;
+                // Get host name
+                String strHostName = Dns.GetHostName();
+
+                // Find host by name
+                IPHostEntry iphostentry = Dns.GetHostByName(strHostName);
+
+                // Enumerate IP addresses
+                foreach (IPAddress ipaddress in iphostentry.AddressList)
+                {
+                    if (ipaddress.AddressFamily != AddressFamily.InterNetwork)
+                        continue;
+                    IControlPoint _controlPoint = new ControlPoint(ipaddress);
+                    runningSSDPClients[ipaddress] = _controlPoint;
+                    _controlPoint.Start(token);
+                    var observerNotify = _controlPoint.NotifyObservable();
+                    var disposableNotify = observerNotify
+                   .Subscribe(
+                       n =>
                        {
-                           if (n.NT.Contains("nanoleaf"))
+                           try
                            {
-                               string? ip = n.Location.Host;
-                               string? port = n.Location.Port.ToString();
-                               string? name = n.Headers["NL-DEVICENAME"];
-                               string? id = n.Headers["NL-DEVICEID"];
-                               EDeviceType type = Tools.ModelStringToEnum(n.NT.Split(':')[1]);
-                               if (string.IsNullOrWhiteSpace(ip) || string.IsNullOrWhiteSpace(port) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id))
+                               if (n.NT.Contains("nanoleaf"))
                                {
-                                   _logger?.LogDebug($"Device Discovered via SSDP but can't be parsed correctly!");
-                                   return;
-                               }
-                               else
-                               {
-                                   if (discoveredDevices.Any(d => d.IP.Equals(ip)))
+                                   string? ip = n.Location.Host;
+                                   string? port = n.Location.Port.ToString();
+                                   string? name = n.Headers["NL-DEVICENAME"];
+                                   string? id = n.Headers["NL-DEVICEID"];
+                                   EDeviceType type = Tools.ModelStringToEnum(n.NT.Split(':')[1]);
+                                   if (string.IsNullOrWhiteSpace(ip) || string.IsNullOrWhiteSpace(port) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id))
+                                   {
+                                       _logger?.LogDebug($"Device Discovered via SSDP but can't be parsed correctly!");
                                        return;
-                                   var device = new DiscoveredDevice(ip, port, name, id, type);
-                                   discoveredDevices.Add(device);
-                                   _logger?.LogDebug($"Device Discovered via SSDP: {device}");
-                                   DeviceDiscovered?.InvokeFailSafe(null, new DiscoveredEventArgs(device));
+                                   }
+                                   else
+                                   {
+                                       if (discoveredDevices.Any(d => d.IP.Equals(ip)))
+                                           return;
+                                       var device = new DiscoveredDevice(ip, port, name, id, type);
+                                       discoveredDevices.Add(device);
+                                       _logger?.LogDebug($"Device Discovered via SSDP: {device}");
+                                       DeviceDiscovered?.InvokeFailSafe(null, new DiscoveredEventArgs(device));
+                                   }
                                }
                            }
+                           catch (Exception ex)
+                           {
+                               _logger?.LogWarning("Not able to decode the SSDP Notification", ex);
+                           }
                        }
-                       catch (Exception ex)
-                       {
-                           _logger?.LogWarning("Not able to decode the SSDP Notification", ex);
-                       }
-                   }
-                   );
+                       );
+                }
+            }
+            catch(Exception e)
+            {
+                _logger?.LogWarning("Not able use SSDP-Library", e);
             }
         }
-
         public static void StopDiscoverySSDPTask()
         {
             _logger?.LogDebug("Request stop for SSDP DiscoverTask");
@@ -151,53 +157,60 @@ namespace NanoleafAPI
 
         public static void StartDiscoverymDNSTask()
         {
-            if (discoverymDNSTaskRunning || discovermDNSTask != null)
-                return;
-
-            discoverymDNSTaskRunning = true;
-            discovermDNSTask = new Task(async () =>
+            try
             {
-                while (discoverymDNSTaskRunning)
+                if (discoverymDNSTaskRunning || discovermDNSTask != null)
+                    return;
+
+                discoverymDNSTaskRunning = true;
+                discovermDNSTask = new Task(async () =>
                 {
-                    IReadOnlyList<IZeroconfHost> results = await
-                    ZeroconfResolver.ResolveAsync("_nanoleafapi._tcp.local.");
-                    foreach (var r in results)
+                    while (discoverymDNSTaskRunning)
                     {
-                        if (discoveredDevices.Any(d => d.IP.Equals(r.IPAddress)))
-                            continue;
-                        try
+                        IReadOnlyList<IZeroconfHost> results = await
+                        ZeroconfResolver.ResolveAsync("_nanoleafapi._tcp.local.");
+                        foreach (var r in results)
                         {
-                            KeyValuePair<string, Zeroconf.IService> s = r.Services.FirstOrDefault();
-                            IService service = s.Value;
-                            EDeviceType type = Tools.ModelStringToEnum(service.Properties.FirstOrDefault()?.FirstOrDefault(p => p.Key.Equals("md")).Value);
-                            string ip = r.IPAddress;
-                            string port = service.Port.ToString();
-                            string name = r.DisplayName;
-                            string? id = service.Properties.FirstOrDefault()?.FirstOrDefault(p => p.Key.Equals("id")).Value;
-
-                            if (string.IsNullOrWhiteSpace(ip) || string.IsNullOrWhiteSpace(port) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id))
+                            if (discoveredDevices.Any(d => d.IP.Equals(r.IPAddress)))
+                                continue;
+                            try
                             {
-                                _logger?.LogDebug($"Device Discovered via mDNS but can't be parsed correctly", service);
-                                return;
-                            }
-                            else
-                            {
-                                var device = new DiscoveredDevice(ip, port, name, id, type);
-                                discoveredDevices.Add(device);
-                                _logger?.LogDebug($"Device Discovered via mDNS: {device}");
-                                DeviceDiscovered?.InvokeFailSafe(null, new DiscoveredEventArgs(device));
-                            }
+                                KeyValuePair<string, Zeroconf.IService> s = r.Services.FirstOrDefault();
+                                IService service = s.Value;
+                                EDeviceType type = Tools.ModelStringToEnum(service.Properties.FirstOrDefault()?.FirstOrDefault(p => p.Key.Equals("md")).Value);
+                                string ip = r.IPAddress;
+                                string port = service.Port.ToString();
+                                string name = r.DisplayName;
+                                string? id = service.Properties.FirstOrDefault()?.FirstOrDefault(p => p.Key.Equals("id")).Value;
 
+                                if (string.IsNullOrWhiteSpace(ip) || string.IsNullOrWhiteSpace(port) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id))
+                                {
+                                    _logger?.LogDebug($"Device Discovered via mDNS but can't be parsed correctly", service);
+                                    return;
+                                }
+                                else
+                                {
+                                    var device = new DiscoveredDevice(ip, port, name, id, type);
+                                    discoveredDevices.Add(device);
+                                    _logger?.LogDebug($"Device Discovered via mDNS: {device}");
+                                    DeviceDiscovered?.InvokeFailSafe(null, new DiscoveredEventArgs(device));
+                                }
+
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger?.LogWarning("Not able to decode the mDNS Datagram", ex);
+                            }
                         }
-                        catch (Exception ex)
-                        {
-                            _logger?.LogWarning("Not able to decode the mDNS Datagram",ex);
-                        }
+                        await Task.Delay(500);
                     }
-                    await Task.Delay(500);
-                }
-            }, token);
-            discovermDNSTask.Start();
+                }, token);
+                discovermDNSTask.Start();
+            }
+            catch (Exception e)
+            {
+                _logger?.LogWarning("Not able use mDNS-Library", e);
+            }
         }
         public static void StopDiscoverymDNSTask()
         {
