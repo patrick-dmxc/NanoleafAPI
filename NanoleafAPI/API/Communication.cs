@@ -66,7 +66,7 @@ namespace NanoleafAPI
             }
         }
         private static List<DiscoveredDevice> discoveredDevices = new List<DiscoveredDevice>();
-        public static ReadOnlyCollection<DiscoveredDevice> DiscoveredDevices
+        public static IReadOnlyList<DiscoveredDevice> DiscoveredDevices
         {
             get
             {

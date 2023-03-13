@@ -39,7 +39,7 @@ namespace NanoleafAPI_Tests
             Assert.That(eventFired, Is.True);
             Assert.Multiple(() =>
             {
-                Assert.That(Communication.DiscoveredDevices.First().DeviceTyp, Is.EqualTo(EDeviceType.Canvas));
+                Assert.That(Communication.DiscoveredDevices.First().DeviceType, Is.EqualTo(EDeviceType.Canvas));
                 Assert.That(Communication.DiscoveredDevices.First().Name, Is.EqualTo("Canvas C097"));
                 Assert.That(Communication.DiscoveredDevices.First().IP, Is.EqualTo(IP));
             });
@@ -69,7 +69,7 @@ namespace NanoleafAPI_Tests
             Assert.That(eventFired, Is.True);
             Assert.Multiple(() =>
             {
-                Assert.That(Communication.DiscoveredDevices.First().DeviceTyp, Is.EqualTo(EDeviceType.Canvas));
+                Assert.That(Communication.DiscoveredDevices.First().DeviceType, Is.EqualTo(EDeviceType.Canvas));
                 Assert.That(Communication.DiscoveredDevices.First().Name, Is.EqualTo("Canvas C097"));
                 Assert.That(Communication.DiscoveredDevices.First().IP, Is.EqualTo(IP));
             });
