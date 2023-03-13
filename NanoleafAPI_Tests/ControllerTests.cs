@@ -40,5 +40,22 @@ namespace NanoleafAPI_Tests
 
             Controller des= JsonSerializer.Deserialize<Controller>(json)!;
         }
+        [Test]
+        public async Task TestControlerWithoutToken()
+        {
+            Controller c = new Controller(IP, PORT);
+            await Task.Delay(6000);
+            Assert.Multiple(() =>
+            {
+                Assert.That(c.Reachable, Is.True, "Reachable");
+                Assert.That(c.SerialNumber, Is.EqualTo("S19124C8036"), "SerialNumber");
+                Assert.That(c.Model, Is.EqualTo("NL29"), "Model");
+                Assert.That(c.Name, Is.EqualTo("Canvas C097"), "Name");
+                Assert.That(c.HardwareVersion, Is.EqualTo("2.0-4"), "HardwareVersion");
+                Assert.That(c.Manufacturer, Is.EqualTo("Nanoleaf"), "Manufacturer");
+            });
+            await Task.Delay(6000);
+            Assert.That(c.StreamingStarted, Is.True, "Stream");
+        }
     }
 }

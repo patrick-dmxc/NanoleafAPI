@@ -266,10 +266,12 @@ namespace NanoleafAPI
                 {
                     var user = await Communication.AddUser(IP, Port);
                     if (user.Success)
+                    {
                         Auth_token = user.ResponseValue.AuthToken;
+                        break;
+                    }
                     else
                         _logger?.LogInformation($"Device({IP}) can't obtain AuthToken");
-
                 }
                 catch (Exception e)
                 {
@@ -277,7 +279,7 @@ namespace NanoleafAPI
                     if (count >= tryes && Auth_token == null)
                     {
                         _logger?.LogInformation($"Device({IP}) not Response after {count} retries");
-                        return;
+                        break;
                     }
                     _logger?.LogDebug(string.Empty, e);
                 }
