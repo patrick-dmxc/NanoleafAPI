@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
@@ -10,6 +11,7 @@ namespace NanoleafAPI
         public string IP { get; private set; }
         public string Port { get; private set; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         public string? Auth_token { get; private set; } = null;
         private bool isDisposed = false;
 
@@ -36,6 +38,7 @@ namespace NanoleafAPI
                 _ = Communication.SetPanelLayoutGlobalOrientation(IP, Port, Auth_token, value);
             }
         }
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         public float GlobalOrientationStored { get; private set; }
         public float GlobalOrientationMin
         {
@@ -50,10 +53,12 @@ namespace NanoleafAPI
 
         public string[] EffectList { get; private set; }
         public string SelectedEffect { get; private set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         public string SelectedEffectStored { get; private set; }
 
         public bool PowerOn { get; private set; }
         public bool PowerOff { get; private set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         public bool PowerOnStored { get; private set; }
 
         private bool reachable;
@@ -111,6 +116,7 @@ namespace NanoleafAPI
                 _ = Communication.SetStateBrightness(IP, Port, Auth_token, value);
             }
         }
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         public float BrightnessStored { get; private set; }
         public float BrightnessMin
         {
@@ -134,6 +140,7 @@ namespace NanoleafAPI
                 _ = Communication.SetStateHue(IP, Port, Auth_token, value);
             }
         }
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         public float HueStored { get; private set; }
         public float HueMin
         {
@@ -157,6 +164,7 @@ namespace NanoleafAPI
                 _ = Communication.SetStateSaturation(IP, Port, Auth_token, value);
             }
         }
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         public float SaturationStored { get; private set; }
         public float SaturationMin
         {
@@ -180,6 +188,7 @@ namespace NanoleafAPI
                 _ = Communication.SetStateColorTemperature(IP, Port, Auth_token, value);
             }
         }
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         public float ColorTempratureStored { get; private set; }
         public float ColorTempratureMin
         {
@@ -192,10 +201,11 @@ namespace NanoleafAPI
             private set;
         }
         public string ColorMode { get; private set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         public string ColorModeStored { get; private set; }
         private List<Panel> panels = new List<Panel>();
         private ConcurrentDictionary<int, Panel> changedPanels = new ConcurrentDictionary<int, Panel>();
-        public ReadOnlyCollection<Panel> Panels
+        public IReadOnlyList<Panel> Panels
         {
             get { return panels.AsReadOnly(); }
         }
@@ -220,6 +230,7 @@ namespace NanoleafAPI
         }
 
 #pragma warning disable CS8618
+        [JsonConstructor]
         public Controller(string ip, string port, string? auth_token = null)
         {
             _logger = Tools.LoggerFactory.CreateLogger<Controller>();

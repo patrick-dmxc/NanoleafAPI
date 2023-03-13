@@ -1,4 +1,5 @@
 using NanoleafAPI;
+using System.Text.Json;
 
 namespace NanoleafAPI_Tests
 {
@@ -29,6 +30,15 @@ namespace NanoleafAPI_Tests
             });
             await Task.Delay(6000);
             Assert.That(c.StreamingStarted, Is.True, "Stream");
+        }
+        [Test]
+        public async Task TestControlerJSON()
+        {
+            Controller c = new Controller(IP, PORT, AUTH_TOKEN);
+            await Task.Delay(6000);
+            string json=JsonSerializer.Serialize(c);
+
+            Controller des= JsonSerializer.Deserialize<Controller>(json)!;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using static NanoleafAPI.PanelPosition;
+﻿using System.Text.Json.Serialization;
+using static NanoleafAPI.PanelPosition;
 
 namespace NanoleafAPI
 {
@@ -48,6 +49,7 @@ namespace NanoleafAPI
         public EShapeType Shape { get; private set; }
 
         private RGBW streamingColor;
+        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         public RGBW StreamingColor
         {
             get { return streamingColor; }
@@ -82,6 +84,18 @@ namespace NanoleafAPI
             Orientation = pp.Orientation;
             Shape = pp.ShapeType;
             SideLength = pp.SideLength;
+            Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
+        }
+        [JsonConstructor]
+        public Panel(string ip, int id,float x, float y, float orientation, EShapeType shape, double sideLength)
+        {
+            IP = ip;
+            ID = id;
+            X = x;
+            Y = y;
+            Orientation = orientation;
+            Shape = shape;
+            SideLength = sideLength;
             Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
         }
 #pragma warning restore CS8618
