@@ -1,6 +1,7 @@
 ﻿using ISSDP.UPnP.PCL.Interfaces.Service;
 using Microsoft.Extensions.Logging;
 using NanoleafAPI.API;
+using SimpleHttpListener.Rx.Model;
 using SSDP.UPnP.PCL.Service;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
@@ -11,6 +12,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
 using System.Text.Json;
+using System.Xml.Linq;
 using Zeroconf;
 using static NanoleafAPI.TouchEvent;
 
@@ -35,6 +37,11 @@ namespace NanoleafAPI
 
         private static Socket? udpCommandSocket = null;
         private static ConcurrentDictionary<string, IPEndPoint> udpCommandEndpoints = new ConcurrentDictionary<string, IPEndPoint>();
+
+        private static HttpClient? client;
+
+
+        private static ConcurrentDictionary<string, HttpClient> httpCLientCache = new ConcurrentDictionary<string, HttpClient>();
 
         private static ReadOnlyCollection<IPAddress> IPAddresses
         {
@@ -227,88 +234,121 @@ namespace NanoleafAPI
         }
         #endregion
 
+        private static HttpClient createClient()
+        {
+            return new HttpClient(new HttpClientHandler() { }, false) { Timeout = new TimeSpan(0, 0, 0, 0, 500) };
+        }
         public static async Task<Result<T>> SendRequest<T>(Request request, bool v1 = true, [CallerMemberName] string? caller = null)
         {
-            using (HttpClient client = new HttpClient() { Timeout = new TimeSpan(0, 0, 0, 1, 500) })
+            if (client == null)
+                client = createClient();
+
+            Exception? exception = null;
+            T? deserialized = default;
+            bool success = false;
+            try
             {
-                Exception? exception = null;
-                T? deserialized = default;
-                bool success = false;
-                try
+                string address = string.Empty;
+                if (v1)
                 {
-                    string address = string.Empty;
-                    if (v1)
+                    if (string.IsNullOrWhiteSpace(request.AuthToken))
+                        address = createUrl(request.IP, request.Port, request.Endpoint);
+                    else
+                        address = createUrl(request.IP, request.Port, request.AuthToken, request.Endpoint);
+                }
+                else
+                {
+                    address = $"http://{request.IP}:{request.Port}/{request.Endpoint}";
+                }
+
+                string commandString = request.Command?.ToString() ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(commandString))
+                    _logger?.LogDebug($"Request {caller} for Url:{Environment.NewLine}{address}");
+                else
+                    _logger?.LogDebug($"Request {caller} for Url:{Environment.NewLine}{address}{Environment.NewLine}Command: {commandString}");
+
+
+
+                HttpResponseMessage? response = null;
+                for (byte i = 0; i < 10; i++)
+                {
+                    try
                     {
-                        if (string.IsNullOrWhiteSpace(request.AuthToken))
-                            address = createUrl(request.IP, request.Port, request.Endpoint);
-                        else
-                            address = createUrl(request.IP, request.Port, request.AuthToken, request.Endpoint);
+                        var req = new HttpRequestMessage(request.Method, address) { Content = new StringContent(commandString) };
+                        response = await client.SendAsync(req);
+                        break;
                     }
+                    catch (TaskCanceledException)
+                    {
+                        // Drop Timeout
+                    }
+                    catch (TimeoutException)
+                    {
+                        // Drop Timeout
+                    }
+
+                    catch (HttpRequestException)
+                    {
+                        client?.Dispose();
+                        await Task.Delay(300);
+                        client = createClient();
+                    }
+                    await Task.Delay(300);
+                }
+                if (response == null)
+                {
+                    _logger?.LogWarning($"Request for {caller} run in timeout for 10 times");
+                    return new Result<T>(request);
+                }
+                if (request.ExpectedResponseStatusCode.Contains(response.StatusCode))
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+
+                    if (request.ExpectedResponseStatusCode.Contains(HttpStatusCode.NoContent))
+                        success = true;
                     else
                     {
-                        address = $"http://{request.IP}:{request.Port}/{request.Endpoint}";
-                    }
-
-                    string commandString = request.Command?.ToString() ?? string.Empty;
-                    var req = new HttpRequestMessage(request.Method, address)
-                    {
-                        Content = new StringContent(commandString)
-                    };
-
-                    if (string.IsNullOrWhiteSpace(commandString))
-                        _logger?.LogDebug($"Request {caller} for Url:{Environment.NewLine}{address}");
-                    else
-                        _logger?.LogDebug($"Request {caller} for Url:{Environment.NewLine}{address}{Environment.NewLine}Command: {commandString}");
-                    var response = await client.SendAsync(req);
-                    if (request.ExpectedResponseStatusCode.Contains(response.StatusCode))
-                    {
-                        var content = await response.Content.ReadAsStringAsync();
-
-                        if (request.ExpectedResponseStatusCode.Contains(HttpStatusCode.NoContent))
+                        try
+                        {
+                            deserialized = JsonSerializer.Deserialize<T?>(content);
                             success = true;
-                        else
-                        {
-                            try
-                             {
-                                deserialized = JsonSerializer.Deserialize<T?>(content);
-                                success = true;
-                            }
-                            catch (Exception e)
-                            {
-                                exception = e;
-                            }
                         }
-                        if (success)
+                        catch (Exception e)
                         {
-                            if (deserialized != null)
-                                _logger?.LogDebug($"Received {caller} response:{Environment.NewLine}{response.StatusCode}{Environment.NewLine}Deserialized:{Environment.NewLine}{deserialized}");
-                            else
-                                _logger?.LogDebug($"Received {caller} response:{Environment.NewLine}{response.StatusCode}");
-                            return new Result<T>(request, response.StatusCode, deserialized);
-                        }
-                        else if (exception != null)
-                        {
-                            _logger?.LogWarning($"Exception on {caller} while deserialize response.{Environment.NewLine}Content:{Environment.NewLine}{content}{Environment.NewLine}Exception:{Environment.NewLine}{exception}");
-                            return new Result<T>(request, response.StatusCode, exception);
+                            exception = e;
                         }
                     }
-                    _logger?.LogWarning($"Received {caller} response can't be Deserialized!");
-                    return new Result<T>(request, response.StatusCode);
+                    if (success)
+                    {
+                        if (deserialized != null)
+                            _logger?.LogDebug($"Received {caller} response:{Environment.NewLine}{response.StatusCode}{Environment.NewLine}Deserialized:{Environment.NewLine}{deserialized}");
+                        else
+                            _logger?.LogDebug($"Received {caller} response:{Environment.NewLine}{response.StatusCode}");
+                        return new Result<T>(request, response.StatusCode, deserialized);
+                    }
+                    else if (exception != null)
+                    {
+                        _logger?.LogWarning($"Exception on {caller} while deserialize response.{Environment.NewLine}Content:{Environment.NewLine}{content}{Environment.NewLine}Exception:{Environment.NewLine}{exception}");
+                        return new Result<T>(request, response.StatusCode, exception);
+                    }
+                }
+                _logger?.LogWarning($"Received {caller}({response.StatusCode}) response can't be Deserialized!");
+                return new Result<T>(request, response.StatusCode);
 
-                }
-                catch (HttpRequestException he)
-                {
-                    exception = he;
-                }
-                catch (Exception e)
-                {
-                    exception = e;
-                }
-                if (exception != null)
-                {
-                    _logger?.LogWarning($"Exception on {caller} while Send Request.{Environment.NewLine}Exception:{Environment.NewLine}{exception}");
-                    return new Result<T>(request, exception);
-                }
+            }
+            catch (HttpRequestException he)
+            {
+                exception = he;
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+            if (exception != null)
+            {
+                _logger?.LogWarning($"Exception on {caller} while Send Request.{Environment.NewLine}Exception:{Environment.NewLine}{exception}");
+                return new Result<T>(request, exception);
             }
             return new Result<T>(request);
         }
@@ -966,6 +1006,8 @@ namespace NanoleafAPI
             tokenSource = new CancellationTokenSource();
             token = tokenSource.Token;
             discoveredDevices.Clear();
+            client?.Dispose();
+            client = null;
             _logger?.LogDebug($"Shutdown done!");
         }
 #if DEBUG //Tests
