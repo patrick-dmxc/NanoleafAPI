@@ -5,15 +5,15 @@ using System.Text.Json.Serialization;
 namespace NanoleafAPI.API
 {
     [JsonConverter(typeof(EGestureConverter))]
-    public enum EGesture
+    public enum EGesture : short
     {
-        UNKNOWN,
-        SingleTap,
-        DoubleTap,
-        SwipeUp,
-        SwipeDown,
-        SwipeLeft,
-        SwipeRight
+        UNKNOWN = -1,
+        SingleTap = 0,
+        DoubleTap = 1,
+        SwipeUp = 2,
+        SwipeDown = 3,
+        SwipeLeft = 4,
+        SwipeRight = 5
     }
     public class EGestureConverter : JsonConverter<EGesture>
     {
@@ -30,23 +30,31 @@ namespace NanoleafAPI.API
 
         public override EGesture Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var val = reader.GetString();
-            switch (val)
+            if (reader.TokenType == JsonTokenType.String)
             {
-                case "st":
-                    return EGesture.SingleTap;
-                case "dt":
-                    return EGesture.DoubleTap;
+                var val = reader.GetString();
+                switch (val)
+                {
+                    case "st":
+                        return EGesture.SingleTap;
+                    case "dt":
+                        return EGesture.DoubleTap;
 
-                case "su":
-                    return EGesture.SwipeUp;
-                case "sd":
-                    return EGesture.SwipeDown;
-                case "sl":
-                    return EGesture.SwipeLeft;
-                case "sr":
-                    return EGesture.SwipeRight;
+                    case "su":
+                        return EGesture.SwipeUp;
+                    case "sd":
+                        return EGesture.SwipeDown;
+                    case "sl":
+                        return EGesture.SwipeLeft;
+                    case "sr":
+                        return EGesture.SwipeRight;
 
+                }
+            }
+            if (reader.TokenType == JsonTokenType.Number)
+            {
+                var val = reader.GetInt32();
+                return (EGesture)val;
             }
 
             return EGesture.UNKNOWN;

@@ -31,7 +31,7 @@ namespace NanoleafAPI
         [JsonPropertyName("x")]
         public readonly float X { get; }
 
-        [JsonPropertyName("Y")]
+        [JsonPropertyName("y")]
         public readonly float Y { get; }
 
         [JsonPropertyName("o")]
