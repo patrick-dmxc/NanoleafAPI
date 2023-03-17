@@ -9,7 +9,7 @@
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Lines.svg?sanitize=false" width="64"/>
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Shapes.svg?sanitize=false" width="64"/>
 <br/>
-© Copyright Nanoleaf.  All rights reserved.
+© Copyright by Nanoleaf.  All rights reserved.
 </h1>
 
 <div align="center">
