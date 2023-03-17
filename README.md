@@ -64,7 +64,7 @@ With this API you have the possibility to control all Nanoleaf products over the
 <div  align="center">
 <P>
 This library was created based on:
-<P>
+<p>
 <a class="navbar-brand" href="https://forum.nanoleaf.me/docs"><span class="force-middle"></span> <img src="https://forum.nanoleaf.me/assets/logo-white-dc7b1140ca2a6aa1c5d868a6689cdf0ae97990ec8de9edc7c867ac993b4399b3.svg" width="400"></a>
 <P>
 <font ="left"  size="-10">
