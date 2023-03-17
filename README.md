@@ -1,4 +1,4 @@
-<img src="https://github.com/SixLabors/Icons/raw/main/icons/nanoleafapi/patrick-dmxc.nanoleafAPI.svg?sanitize=true" alt="NanoleafAPI" width="256"/>
+<img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/NanoleafAPI.svg?sanitize=true" alt="NanoleafAPI" width="256"/>
 
 # NanoleafAPI
 [![Version](https://img.shields.io/nuget/v/NanoleafAPI.svg?color=royalblue)](https://www.nuget.org/packages/NanoleafAPI)
