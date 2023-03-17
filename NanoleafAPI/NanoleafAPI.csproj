@@ -13,6 +13,7 @@
     <PackageIcon>NanoleafAPI.png</PackageIcon>
     <ApplicationIcon>Icons\NanoleafAPI.ico</ApplicationIcon>
     <Description>With this API you have the possibility to control all Nanoleaf products over the network.
+
 Supported Products: Light-Panels, Canvas, Shapes, Essentials, Elemants, Lines
 
 Supportet Features:
