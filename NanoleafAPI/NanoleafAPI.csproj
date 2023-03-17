@@ -9,7 +9,12 @@
     <PackageProjectUrl>https://github.com/patrick-dmxc/NanoleafAPI</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>NanoleafAPI.png</PackageIcon>
+    <ApplicationIcon>Icons\NanoleafAPI.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Icons\NanoleafAPI.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="..\LICENSE">

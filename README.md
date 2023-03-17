@@ -15,15 +15,15 @@ NanoleafAPI
 </div>
 
 
-With this API you have the possibility to control all Nanoleaf products over the network.
-In detail:
-- Set
+## With this API you have the possibility to control all Nanoleaf products over the network.
+### In detail:
+- ### Set
   - Current Effect
   - Effects 
   - Orientation 
   - Color
   - Brightness
-- Get
+- ### Get
   - Current Effect
   - Effects 
   - Orientation 
@@ -32,14 +32,27 @@ In detail:
   - Layout
   - Firmware
   - Hardware
-- Receiving of Events
+- ### Receiving of Events
   - Gestures
   - Touch
   - States
   - Layout
-- Settings
+- ### Settings
   - Gestures
   - Fadings
   - Button-Control
   - Auto Brightness
-- Streaming in real time Color
+- ### Streaming Colors in real time
+
+
+<div  align="center">
+<br/>
+<P>
+This library was created based on:
+<P>
+<a class="navbar-brand" href="https://forum.nanoleaf.me/docs"><span class="force-middle"></span> <img src="https://forum.nanoleaf.me/assets/logo-white-dc7b1140ca2a6aa1c5d868a6689cdf0ae97990ec8de9edc7c867ac993b4399b3.svg" width="400"></a>
+<P>
+<font ="left"  size="-10">
+© Images Copyright by Nanoleaf.  All rights reserved.
+</font>
+</div>
