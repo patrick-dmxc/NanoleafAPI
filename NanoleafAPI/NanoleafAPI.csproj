@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>0.0.28</Version>
+    <Version>0.0.29</Version>
     <PackageProjectUrl>https://github.com/patrick-dmxc/NanoleafAPI</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>NanoleafAPI.png</PackageIcon>
@@ -33,6 +33,7 @@
     <None Update="Icons\NanoleafAPI.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
