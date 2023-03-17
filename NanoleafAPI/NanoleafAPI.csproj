@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>0.0.29</Version>
+    <Version>0.0.30</Version>
     <PackageProjectUrl>https://github.com/patrick-dmxc/NanoleafAPI</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>NanoleafAPI.png</PackageIcon>
@@ -20,6 +20,7 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+	<None Include="Icons\NanoleafAPI.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,14 +28,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
     <PackageReference Include="SSDP.UPnP.PCL" Version="6.1.0" />
     <PackageReference Include="Zeroconf" Version="3.6.11" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Icons\NanoleafAPI.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>
