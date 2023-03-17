@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/NanoleafAPI.svg?sanitize=false" alt="NanoleafAPI" width="256"/>
 <br/>
-# NanoleafAPI
+NanoleafAPI
 </h1>
 
 <div align="center">
