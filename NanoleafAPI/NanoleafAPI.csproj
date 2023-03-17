@@ -6,10 +6,21 @@
     <Nullable>enable</Nullable>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Version>0.0.30</Version>
-    <PackageProjectUrl>https://github.com/patrick-dmxc/NanoleafAPI</PackageProjectUrl>
+	<RepositoryUrl>https://github.com/patrick-dmxc/NanoleafAPI</RepositoryUrl>
+	<PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
+	<PackageTags>Nanoleaf Light-Panels Canvas Shapes Essentials Elemants Lines API SmartHome</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>NanoleafAPI.png</PackageIcon>
     <ApplicationIcon>Icons\NanoleafAPI.ico</ApplicationIcon>
+    <Description>With this API you have the possibility to control all Nanoleaf products over the network.
+Supported Products: Light-Panels, Canvas, Shapes, Essentials, Elemants, Lines
+
+Supportet Features:
+Set: Current Effect, Effects, Orientation, Color, Brightness
+Get: Current Effect, Effects, Orientation, Color, Brightness, Layout, Firmware, Hardware
+Receiving of Events: Gestures, Touch, States, Layout
+Settings: Gestures, Fadings, Button-Control, Auto Brightness
+Streaming Colors in real time</Description>
   </PropertyGroup>
 
   <ItemGroup>
