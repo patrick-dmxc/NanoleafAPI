@@ -14,6 +14,23 @@ namespace NanoleafAPI
         [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         public string? Auth_token { get; private set; } = null;
         private bool isDisposed = false;
+        public bool IsInitialized { get; private set; } = false;
+        protected bool IsSendPossible
+        {
+            get
+            {
+                if (!IsInitialized)
+                    return false;
+                if (isDisposed)
+                    return false;
+                if (!Tools.IsTokenValid(Auth_token))
+                    return false;
+                if(!Reachable)
+                    return false;
+
+                return true;
+            }
+        }
 
         public string Name { get; private set; }
         public string Model { get; private set; }
@@ -32,10 +49,10 @@ namespace NanoleafAPI
             get { return globalOrientation; }
             private set
             {
-                if (!Tools.IsTokenValid(Auth_token))
+                if (!IsSendPossible)
                     return;
 
-                _ = Communication.SetPanelLayoutGlobalOrientation(IP, Port, Auth_token, value);
+                _ = Communication.SetPanelLayoutGlobalOrientation(IP, Port, Auth_token!, value);
             }
         }
         [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
@@ -75,7 +92,7 @@ namespace NanoleafAPI
                 this.reachable = value;
                 _logger?.LogInformation($"{this} is reachable.");
                 _ = this.establishConnection();
-                if ((!externalControlInfo.HasValue) && value)
+                if ((!externalControlInfo.HasValue) && value && StreamingStarted)
                     _ = RestartStreaming();
                 ReachableChanged?.InvokeFailSafe(this, EventArgs.Empty);
             }
@@ -90,17 +107,17 @@ namespace NanoleafAPI
 
         public void SetPowerOn()
         {
-            if (!Tools.IsTokenValid(Auth_token))
+            if (!IsSendPossible)
                 return;
 
-            _ = Communication.SetStateOnOff(IP, Port, Auth_token, true);
+            _ = Communication.SetStateOnOff(IP, Port, Auth_token!, true);
         }
         public void SetPowerOff()
         {
-            if (!Tools.IsTokenValid(Auth_token))
+            if (!IsSendPossible)
                 return;
 
-            _ = Communication.SetStateOnOff(IP, Port, Auth_token, false);
+            _ = Communication.SetStateOnOff(IP, Port, Auth_token!, false);
         }
 
         private float brightness;
@@ -110,10 +127,10 @@ namespace NanoleafAPI
             get { return brightness; }
             set
             {
-                if (!Tools.IsTokenValid(Auth_token))
-                    return;
+                return;
 
-                _ = Communication.SetStateBrightness(IP, Port, Auth_token, value);
+
+                _ = Communication.SetStateBrightness(IP, Port, Auth_token!, value);
             }
         }
         [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
@@ -134,10 +151,10 @@ namespace NanoleafAPI
             get { return hue; }
             set
             {
-                if (!Tools.IsTokenValid(Auth_token))
+                if (!IsSendPossible)
                     return;
 
-                _ = Communication.SetStateHue(IP, Port, Auth_token, value);
+                _ = Communication.SetStateHue(IP, Port, Auth_token!, value);
             }
         }
         [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
@@ -158,10 +175,10 @@ namespace NanoleafAPI
             get { return saturation; }
             set
             {
-                if (!Tools.IsTokenValid(Auth_token))
+                if (!IsSendPossible)
                     return;
 
-                _ = Communication.SetStateSaturation(IP, Port, Auth_token, value);
+                _ = Communication.SetStateSaturation(IP, Port, Auth_token!, value);
             }
         }
         [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
@@ -182,10 +199,10 @@ namespace NanoleafAPI
             get { return colorTemprature; }
             set
             {
-                if (!Tools.IsTokenValid(Auth_token))
+                if (!IsSendPossible)
                     return;
 
-                _ = Communication.SetStateColorTemperature(IP, Port, Auth_token, value);
+                _ = Communication.SetStateColorTemperature(IP, Port, Auth_token!, value);
             }
         }
         [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
@@ -254,6 +271,7 @@ namespace NanoleafAPI
             }
             _ = this.runController();
             this.streamController();
+            IsInitialized = true;
         }
 
         public async Task RequestToken(int tryes = 20)
@@ -372,7 +390,7 @@ namespace NanoleafAPI
         public async Task StartStreaming()
         {
             _logger?.LogInformation($"Starting Stream to {IP}");
-            if (Tools.IsTokenValid(Auth_token))
+            if (IsSendPossible)
             {
                 var response = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
                 if (response.Success)
@@ -383,7 +401,12 @@ namespace NanoleafAPI
 
                 var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
                 if (eci.Success)
+                {
                     externalControlInfo = eci.ResponseValue;
+
+                    StreamingStarted = true;
+                    return;
+                }
                 else
                     _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
 
@@ -391,29 +414,37 @@ namespace NanoleafAPI
             }
             else
                 _logger?.LogInformation($"{nameof(Auth_token)} for {IP} is invalid");
+
+            StreamingStarted = false;
         }
         public async Task RestartStreaming()
         {
-            if (Tools.IsTokenValid(Auth_token))
+            if (IsSendPossible)
             {
                 var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
                 if (eci.Success)
+                {
                     externalControlInfo = eci.ResponseValue;
+                    StreamingStarted = true;
+                    return;
+                }
                 else
                     _logger?.LogDebug($"{nameof(Communication.SetExternalControlStreaming)} returned null");
             }
+            StreamingStarted = false;
         }
         public async Task StopStreaming()
         {
             _logger?.LogInformation($"Stopping Stream to {IP}");
             externalControlInfo = null;
-            if (Tools.IsTokenValid(Auth_token))
+            if (IsSendPossible)
             {
                 await restoreParameters();
                 _logger?.LogInformation($"Stopped Stream to {IP}");
             }
             else
                 _logger?.LogInformation($"{nameof(Auth_token)} for {IP} is invalid");
+            StreamingStarted = false;
         }
 
         private void updateInfos(AllPanelInfo? allPanelInfo)
@@ -518,7 +549,6 @@ namespace NanoleafAPI
             streamThread = new Thread(async () =>
             {
                 _logger?.LogDebug("Start Stream");
-                StreamingStarted = true;
                 while (!isDisposed && Auth_token == null)
                     Thread.Sleep(1000);
 
@@ -587,7 +617,6 @@ namespace NanoleafAPI
                     }
                     Thread.SpinWait(10);
                 }
-                StreamingStarted = false;
             });
             streamThread.Name = "NanoleafAPI-StreamThread";
             streamThread.Priority = ThreadPriority.AboveNormal;
@@ -597,12 +626,12 @@ namespace NanoleafAPI
 
         public async Task<bool> SetEffect(bool externalControl, string? effectName = null)
         {
-            if (!Tools.IsTokenValid(Auth_token))
+            if (!IsSendPossible)
                 return false;
 
             if (externalControl)
             {
-                var info = Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
+                var info = Communication.SetExternalControlStreaming(IP, Port, Auth_token!, DeviceType);
 
                 return (info != null);
             }
@@ -611,7 +640,7 @@ namespace NanoleafAPI
                 if (string.IsNullOrWhiteSpace(effectName))
                     return false;
 
-                var response = await Communication.SetSelectedEffect(IP, Port, Auth_token, effectName);
+                var response = await Communication.SetSelectedEffect(IP, Port, Auth_token!, effectName);
                 return response.Success;
             }
         }
@@ -638,15 +667,15 @@ namespace NanoleafAPI
         {
             Dispose();
             await restoreParameters();
-            if (deleteUser && Tools.IsTokenValid(Auth_token))
-                Communication.DeleteUser(IP, Port, Auth_token).GetAwaiter().GetResult();
+            if (deleteUser && IsSendPossible)
+                Communication.DeleteUser(IP, Port, Auth_token!).GetAwaiter().GetResult();
 
             _logger?.LogInformation(string.Format("Destruct {0}", this));
         }
 
         private async Task restoreParameters()
         {
-            if (!Tools.IsTokenValid(Auth_token))
+            if (!IsSendPossible)
                 return;
 
             try
@@ -687,6 +716,7 @@ namespace NanoleafAPI
 
         public void Dispose()
         {
+            IsInitialized = false;
             isDisposed = true;
             streamThread = null;
         }

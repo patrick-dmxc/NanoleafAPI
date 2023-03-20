@@ -18,7 +18,7 @@ namespace NanoleafAPI_Tests
         public async Task TestControler()
         {
             Controller c = new Controller(IP, PORT,AUTH_TOKEN);
-            await Task.Delay(6000);
+            await Task.Delay(1000);
             Assert.Multiple(() =>
             {
                 Assert.That(c.Reachable, Is.True, "Reachable");
@@ -28,8 +28,22 @@ namespace NanoleafAPI_Tests
                 Assert.That(c.HardwareVersion, Is.EqualTo("2.0-4"), "HardwareVersion");
                 Assert.That(c.Manufacturer, Is.EqualTo("Nanoleaf"), "Manufacturer");
             });
-            await Task.Delay(6000);
+            Assert.That(c.StreamingStarted, Is.False, "Stream");
+            await c.StartStreaming();
             Assert.That(c.StreamingStarted, Is.True, "Stream");
+            await Task.Delay(1000);
+            foreach (var panel in c.Panels)
+                panel.StreamingColor= new RGBW(255,0,255);
+            await Task.Delay(1000);
+            Assert.That(c.StreamingStarted, Is.True, "Stream");
+            foreach (var panel in c.Panels)
+                panel.StreamingColor = new RGBW(0, 0, 255);
+            await Task.Delay(1000);
+            foreach (var panel in c.Panels)
+                panel.StreamingColor = new RGBW(255, 0, 0);
+            await Task.Delay(1000);
+            foreach (var panel in c.Panels)
+                panel.StreamingColor = new RGBW(0, 255, 0);
         }
         [Test]
         public async Task TestControlerJSON()
