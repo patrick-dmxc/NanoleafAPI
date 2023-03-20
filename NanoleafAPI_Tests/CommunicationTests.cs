@@ -355,6 +355,9 @@ namespace NanoleafAPI_Tests
         {
             await Communication.SetStateOnOff(IP, PORT, AUTH_TOKEN, true);
             await Task.Delay(1000);
+            await Communication.SetStateOnOff(IP, PORT, AUTH_TOKEN, true);
+            await Task.Delay(1000);
+            await Communication.SetStateOnOff(IP, PORT, AUTH_TOKEN, true);
             StateEventArgs? args = null;
             Communication.StaticOnStateEvent += (o, e) => { args = e; };
             Communication.StartEventListener(IP, PORT, AUTH_TOKEN);
