@@ -1,20 +1,21 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
 {
-    public readonly struct StateEvent
+    public struct StateEvent
     {
         [JsonPropertyName("attr")]
-        public readonly EAttribute Attribute { get; }
+        public EAttribute Attribute { get; }
         [JsonPropertyName("value")]
-        public readonly JsonElement Value { get; }
-        public readonly bool? On { get; } = null;
-        public readonly float? Brightness { get; } = null;
-        public readonly float? Hue { get; } = null;
-        public readonly float? Saturation { get; } = null;
-        public readonly float? CCT { get; } = null;
-        public readonly string? ColorMode { get; } = null;
+        public object Value { get; private set; }
+        public bool? On { get; } = null;
+        public float? Brightness { get; } = null;
+        public float? Hue { get; } = null;
+        public float? Saturation { get; } = null;
+        public float? CCT { get; } = null;
+        public string? ColorMode { get; } = null;
         public enum EAttribute
         {
             UNKNOWN,
@@ -27,31 +28,33 @@ namespace NanoleafAPI
         }
 
         [JsonConstructor]
-        public StateEvent(EAttribute attribute, JsonElement value)
+        public StateEvent(EAttribute attribute, object value)
         {
             Attribute = attribute;
-            Value = value;
+            
+            if (value is JsonElement element)
             switch (Attribute)
             {
                 case EAttribute.On:
-                    On = value.Deserialize<bool>();
-                    break;
+                        Value = On =  element.Deserialize<bool>();
+                        return;
                 case EAttribute.Brightness:
-                    Brightness = value.Deserialize<float>();
-                    break;
+                        Value = Brightness = element.Deserialize<float>();
+                        return;
                 case EAttribute.Hue:
-                    Hue = value.Deserialize<float>();
-                    break;
+                        Value = Hue = element.Deserialize<float>();
+                        return;
                 case EAttribute.Saturation:
-                    Saturation = value.Deserialize<float>();
-                    break;
+                        Value = Saturation = element.Deserialize<float>();
+                        return;
                 case EAttribute.CCT:
-                    CCT = value.Deserialize<float>();
-                    break;
+                        Value = CCT = element.Deserialize<float>();
+                        return;
                 case EAttribute.ColorMode:
-                    ColorMode = value.Deserialize<string>();
-                    break;
+                        Value = ColorMode = element.Deserialize<string>()!;
+                    return;
             }
+            Value = string.Empty;
         }
 
         public override string ToString()

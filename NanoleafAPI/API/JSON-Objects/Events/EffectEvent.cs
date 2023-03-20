@@ -5,9 +5,9 @@ namespace NanoleafAPI
     public readonly struct EffectEvent
     {
         [JsonPropertyName("attr")]
-        public readonly int Attribute { get; }
+        public int Attribute { get; }
         [JsonPropertyName("value")]
-        public readonly string? Value { get; }
+        public string? Value { get; }
 
         [JsonConstructor]
         public EffectEvent(int attribute, string? value) => (Attribute, Value) = (attribute, value);

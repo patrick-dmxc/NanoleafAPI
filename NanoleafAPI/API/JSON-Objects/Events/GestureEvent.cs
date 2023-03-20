@@ -6,9 +6,9 @@ namespace NanoleafAPI
     public readonly struct GestureEvent
     {
         [JsonPropertyName("gesture")]
-        public readonly EGesture Gesture { get; } = EGesture.UNKNOWN;
+        public EGesture Gesture { get; } = EGesture.UNKNOWN;
         [JsonPropertyName("panelId")]
-        public readonly int PanelID { get; } = -2;
+        public int PanelID { get; } = -2;
         
 
         [JsonConstructor]

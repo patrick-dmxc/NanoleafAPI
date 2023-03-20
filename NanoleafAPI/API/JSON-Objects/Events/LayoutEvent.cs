@@ -6,14 +6,14 @@ namespace NanoleafAPI
     public readonly struct LayoutEvent
     {
         [JsonPropertyName("attr")]
-        public readonly EAttribute Attribute { get; }
+        public EAttribute Attribute { get; }
 
         [JsonPropertyName("value")]
-        public readonly JsonElement Value { get; }
+        public JsonElement Value { get; }
 
-        public readonly Layout? Layout { get; } = null;
+        public Layout? Layout { get; } = null;
 
-        public readonly float? GlobalOrientation { get; } = null;
+        public float? GlobalOrientation { get; } = null;
 
         public enum EAttribute
         {

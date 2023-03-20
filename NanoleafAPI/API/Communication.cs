@@ -966,19 +966,19 @@ namespace NanoleafAPI
             {
                 case 1:
                     var stateEvents = JsonSerializer.Deserialize<StateEvents>(eventData);
-                    StaticOnStateEvent?.InvokeFailSafe(ip, new StateEventArgs(ip, stateEvents));
+                    StaticOnStateEvent?.Invoke(ip, new StateEventArgs(ip, stateEvents));
                     break;
                 case 2:
                     var layoutEvents = JsonSerializer.Deserialize<LayoutEvents>(eventData);
-                    StaticOnLayoutEvent?.InvokeFailSafe(ip, new LayoutEventArgs(ip, layoutEvents));
+                    StaticOnLayoutEvent?.Invoke(ip, new LayoutEventArgs(ip, layoutEvents));
                     break;
                 case 3:
                     var effectEvent = JsonSerializer.Deserialize<EffectEvents>(eventData);
-                    StaticOnEffectEvent?.InvokeFailSafe(ip, new EffectEventArgs(ip, effectEvent));
+                    StaticOnEffectEvent?.Invoke(ip, new EffectEventArgs(ip, effectEvent));
                     break;
                 case 4:
                     var gestureEvents = JsonSerializer.Deserialize<GestureEvents>(eventData);
-                    StaticOnGestureEvent?.InvokeFailSafe(ip, new GestureEventArgs(ip, gestureEvents));
+                    StaticOnGestureEvent?.Invoke(ip, new GestureEventArgs(ip, gestureEvents));
                     break;
             }
         }
