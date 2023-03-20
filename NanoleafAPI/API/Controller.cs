@@ -15,6 +15,7 @@ namespace NanoleafAPI
         [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         public string? Auth_token { get; private set; } = null;
         private bool isDisposed = false;
+        public bool IsInitializing { get; private set; } = false;
         public bool IsInitialized { get; private set; } = false;
         protected bool IsSendPossible
         {
@@ -260,7 +261,7 @@ namespace NanoleafAPI
             Port = port;
             Auth_token = auth_token;
             if (initialize)
-                _ = startServices();
+                _ = Initialize();
         }
 #pragma warning restore CS8618
 
@@ -272,8 +273,10 @@ namespace NanoleafAPI
         {
             if (this.IsInitialized)
                 return;
-
+            this.IsInitializing = true;
             await this.startServices();
+            this.IsInitialized = true;
+            this.IsInitializing = false;
         }
         private async Task startServices()
         {
@@ -283,7 +286,6 @@ namespace NanoleafAPI
             }
             _ = this.runController();
             this.streamController();
-            IsInitialized = true;
         }
 
         public async Task RequestToken(int tryes = 20)
