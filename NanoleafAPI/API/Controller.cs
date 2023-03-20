@@ -250,11 +250,16 @@ namespace NanoleafAPI
 
 #pragma warning disable CS8618
         [JsonConstructor]
-        public Controller(string ip, string port, string? auth_token): this(ip,port, true, auth_token)
+        public Controller(string ip, string port, string? auth_token)
         {
+            _logger = Tools.LoggerFactory.CreateLogger<Controller>();
+            IP = ip;
+            Port = port;
+            Auth_token = auth_token;
+                _ = Initialize();
         }
 
-        public Controller(string ip, string port, bool initialize, string? auth_token = null)
+        private Controller(string ip, string port, bool initialize, string? auth_token = null)
         {
             _logger = Tools.LoggerFactory.CreateLogger<Controller>();
             IP = ip;
@@ -264,6 +269,12 @@ namespace NanoleafAPI
                 _ = Initialize();
         }
 #pragma warning restore CS8618
+
+        public static Controller CreateFromIPPort(string ip, string port)
+        {
+            return new Controller(ip, port, false, null);
+        }
+
 
         ~Controller()
         {

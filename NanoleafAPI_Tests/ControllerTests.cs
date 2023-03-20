@@ -66,7 +66,8 @@ namespace NanoleafAPI_Tests
         [Test]
         public async Task TestControlerWithoutToken()
         {
-            Controller c = new Controller(IP, PORT, true);
+            Controller c = Controller.CreateFromIPPort(IP, PORT);
+            await c.Initialize();
             await Task.Delay(6000);
             Assert.Multiple(() =>
             {
