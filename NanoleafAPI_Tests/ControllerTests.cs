@@ -54,10 +54,19 @@ namespace NanoleafAPI_Tests
 
             Controller des= JsonSerializer.Deserialize<Controller>(json)!;
         }
+
+        [Test]
+        public async Task TestControlerJSONDeserialize()
+        {
+            string jsonControllers = "[{\"IP\":\"192.168.10.152\",\"Port\":\"16021\",\"Auth_token\":\"wwS6B8Meg3O2AlLXhBym9yVHPuPgKGvW\",\"Name\":\"Canvas C097\",\"Model\":\"NL29\",\"Manufacturer\":\"Nanoleaf\",\"SerialNumber\":\"S19124C8036\",\"HardwareVersion\":\"2.0-4\",\"FirmwareVersion\":\"7.1.0\",\"DeviceType\":2,\"NumberOfPanels\":9,\"GlobalOrientation\":0,\"GlobalOrientationStored\":0,\"GlobalOrientationMin\":0,\"GlobalOrientationMax\":360,\"EffectList\":[\"*ExtControl*\",\"Color Burst333\",\"DancingTiles\",\"Dynamic 26-4-2021 20:32\",\"EDM Strobe\",\"Electric Chill\",\"Energize\",\"Falling Whites\",\"Fireworks\",\"Flames\",\"Forest\",\"Inner Peace\",\"Magic Strobe\",\"Meteor Shower\",\"Nemo\",\"Northern Lights\",\"Paint Splatter\",\"Pulse Pop Beats\",\"Radial Sound Bar\",\"Red Beat\",\"Red Meteor\",\"Rhythmic Northern Lights\",\"Romantic\",\"Shooting Stars\",\"Soda\",\"Sound Bar\",\"Streaking Notes\",\"Strobe\",\"Sub 49 Strobe Fireworks\",\"Super Strobe\",\"Thunder\",\"Vader\",\"eeee\",\"\\u661F\\u591CStarry Night\"],\"SelectedEffect\":\"*ExtControl*\",\"SelectedEffectStored\":\"Northern Lights\",\"PowerOn\":true,\"PowerOff\":false,\"PowerOnStored\":true,\"Reachable\":true,\"StreamingStarted\":true,\"Brightness\":100,\"BrightnessStored\":100,\"BrightnessMin\":0,\"BrightnessMax\":100,\"Hue\":0,\"HueStored\":0,\"HueMin\":0,\"HueMax\":360,\"Saturation\":0,\"SaturationStored\":0,\"SaturationMin\":0,\"SaturationMax\":100,\"ColorTemprature\":5000,\"ColorTempratureStored\":5000,\"ColorTempratureMin\":1200,\"ColorTempratureMax\":6500,\"ColorMode\":\"effect\",\"ColorModeStored\":\"effect\",\"Panels\":[{\"IP\":\"192.168.10.152\",\"ID\":47583,\"X\":600,\"Y\":0,\"Orientation\":0,\"Shape\":3,\"StreamingColor\":{},\"LastUpdate\":0,\"SideLength\":100},{\"IP\":\"192.168.10.152\",\"ID\":35641,\"X\":500,\"Y\":0,\"Orientation\":270,\"Shape\":2,\"StreamingColor\":{},\"LastUpdate\":0,\"SideLength\":100},{\"IP\":\"192.168.10.152\",\"ID\":12783,\"X\":400,\"Y\":0,\"Orientation\":270,\"Shape\":2,\"StreamingColor\":{},\"LastUpdate\":0,\"SideLength\":100},{\"IP\":\"192.168.10.152\",\"ID\":43562,\"X\":300,\"Y\":0,\"Orientation\":270,\"Shape\":2,\"StreamingColor\":{},\"LastUpdate\":0,\"SideLength\":100},{\"IP\":\"192.168.10.152\",\"ID\":30232,\"X\":200,\"Y\":0,\"Orientation\":270,\"Shape\":2,\"StreamingColor\":{},\"LastUpdate\":0,\"SideLength\":100},{\"IP\":\"192.168.10.152\",\"ID\":5439,\"X\":100,\"Y\":0,\"Orientation\":270,\"Shape\":2,\"StreamingColor\":{},\"LastUpdate\":0,\"SideLength\":100},{\"IP\":\"192.168.10.152\",\"ID\":24381,\"X\":0,\"Y\":0,\"Orientation\":270,\"Shape\":2,\"StreamingColor\":{},\"LastUpdate\":0,\"SideLength\":100},{\"IP\":\"192.168.10.152\",\"ID\":65307,\"X\":0,\"Y\":0,\"Orientation\":270,\"Shape\":2,\"StreamingColor\":{},\"LastUpdate\":0,\"SideLength\":100},{\"IP\":\"192.168.10.152\",\"ID\":42857,\"X\":250,\"Y\":0,\"Orientation\":90,\"Shape\":2,\"StreamingColor\":{},\"LastUpdate\":0,\"SideLength\":100}],\"RefreshRate\":44}]";
+
+            var objControllers = JsonSerializer.Deserialize<IReadOnlyList<Controller>>(jsonControllers);
+            Assert.Pass(jsonControllers);
+        }
         [Test]
         public async Task TestControlerWithoutToken()
         {
-            Controller c = new Controller(IP, PORT);
+            Controller c = new Controller(IP, PORT, true);
             await Task.Delay(6000);
             Assert.Multiple(() =>
             {
@@ -69,7 +78,12 @@ namespace NanoleafAPI_Tests
                 Assert.That(c.Manufacturer, Is.EqualTo("Nanoleaf"), "Manufacturer");
             });
             await Task.Delay(6000);
+            Assert.That(c.StreamingStarted, Is.False, "Stream");
+            await c.StartStreaming();
             Assert.That(c.StreamingStarted, Is.True, "Stream");
+
+            foreach (var panel in c.Panels)
+                panel.StreamingColor = new RGBW(255, 0, 255);
         }
     }
 }

@@ -249,7 +249,7 @@ namespace NanoleafAPI
 
 #pragma warning disable CS8618
         [JsonConstructor]
-        public Controller(string ip, string port, string? auth_token = null): this(ip,port, true, auth_token)
+        public Controller(string ip, string port, string? auth_token): this(ip,port, true, auth_token)
         {
         }
 
