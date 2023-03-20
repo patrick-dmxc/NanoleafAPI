@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
 namespace NanoleafAPI
@@ -248,7 +249,11 @@ namespace NanoleafAPI
 
 #pragma warning disable CS8618
         [JsonConstructor]
-        public Controller(string ip, string port, string? auth_token = null, bool initialize = true)
+        public Controller(string ip, string port, string? auth_token = null): this(ip,port, true, auth_token)
+        {
+        }
+
+        public Controller(string ip, string port, bool initialize, string? auth_token = null)
         {
             _logger = Tools.LoggerFactory.CreateLogger<Controller>();
             IP = ip;
