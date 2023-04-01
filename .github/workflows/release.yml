@@ -21,7 +21,7 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.1
       with:
-        path: NanoleafAPI/bin/Release/net6.0/RentmanSharp.dll
+        path: NanoleafAPI/bin/Release/net6.0/NanoleafAPI.dll
     - name: Publish NanoleafAPI
       uses: brandedoutcast/publish-nuget@v2.5.2
       with:
