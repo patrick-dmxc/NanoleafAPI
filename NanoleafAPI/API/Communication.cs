@@ -591,6 +591,12 @@ namespace NanoleafAPI
             var res = await SendRequest<FirmwareUpgrade>(new Request(ip, port, auth_token, "firmwareUpgrade", null, HttpMethod.Get, HttpStatusCode.OK));
             return res;
         }
+
+        public static async Task<Result<object>> TriggerFirmwareUpgrade(string ip, string port, string auth_token, bool enabled)
+        {
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "firmwareUpgrade", new Command(new { command = "triggerFirmwareUpgrade" }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
+        }
         #endregion
 
         #region Commands
