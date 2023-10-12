@@ -507,6 +507,24 @@ namespace NanoleafAPI
         }
         #endregion
 
+        #region Schedules
+        public static async Task<Result<Schedules>> GetSchedules(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<Schedules>(new Request(ip, port, auth_token, "schedules", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+        public static async Task<Result<object>> AddSchedules(string ip, string port, string auth_token, Schedules schedules)
+        {
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "schedules", new Command(new { command = "addSchedules"}, schedules), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
+        }
+        public static async Task<Result<object>> DeleteSchedules(string ip, string port, string auth_token, Schedules schedules)
+        {
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "schedules", new Command( new { command = "removeSchedules", schedules }), HttpMethod.Put, HttpStatusCode.NoContent));
+            return res;
+        }
+        #endregion
+
         #region Rhythm
         public static async Task<Result<bool>> GetRhythmConnected(string ip, string port, string auth_token)
         {
