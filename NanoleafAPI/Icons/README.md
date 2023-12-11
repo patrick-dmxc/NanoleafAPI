@@ -17,7 +17,7 @@
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Holiday-String-Lights.svg?sanitize=false" height="64"  width="64"/>
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/4D.svg?sanitize=false" height="64" width="64"/>
 <br/>
-� Copyright by Nanoleaf.  All rights reserved.
+© Copyright by Nanoleaf.  All rights reserved.
 </h1>
 
 <div align="center">
