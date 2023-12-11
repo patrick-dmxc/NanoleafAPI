@@ -12,6 +12,7 @@
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Lines.svg?sanitize=false" width="64"/>
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Shapes.svg?sanitize=false" width="64"/>
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Cono-Lamp.svg?sanitize=false" height="64"/>
+<img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/4D.svg?sanitize=false" height="64"/>
 <br/>
 � Copyright by Nanoleaf.  All rights reserved.
 </h1>
