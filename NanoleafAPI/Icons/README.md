@@ -5,13 +5,13 @@
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Canvas.svg?sanitize=false" width="64"/>
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Elements.svg?sanitize=false" width="64"/>
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Essentials.svg?sanitize=false" width="64"/>
-<img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/B22.svg?sanitize=false" width="64"/>
-<img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/E27.svg?sanitize=false" width="64"/>
-<img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/GU10.svg?sanitize=false" width="64"/>
+<img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/B22.svg?sanitize=false" height="64"/>
+<img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/E27.svg?sanitize=false" height="64"/>
+<img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/GU10.svg?sanitize=false" height="64"/>
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Light Panels.svg?sanitize=false" width="64"/>
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Lines.svg?sanitize=false" width="64"/>
 <img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Shapes.svg?sanitize=false" width="64"/>
-<img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Cono-Lamp.svg?sanitize=false" width="64"/>
+<img src="https://raw.githubusercontent.com/patrick-dmxc/NanoleafAPI/main/NanoleafAPI/Icons/Cono-Lamp.svg?sanitize=false" height="64"/>
 <br/>
 � Copyright by Nanoleaf.  All rights reserved.
 </h1>
