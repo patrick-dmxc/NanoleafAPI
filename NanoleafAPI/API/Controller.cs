@@ -129,8 +129,8 @@ namespace NanoleafAPI
             get { return brightness; }
             set
             {
-                return;
-
+                if (!IsSendPossible)
+                    return;
 
                 _ = Communication.SetStateBrightness(IP, Port, Auth_token!, value);
             }
@@ -417,14 +417,14 @@ namespace NanoleafAPI
             _logger?.LogInformation($"Starting Stream to {IP}");
             if (IsSendPossible)
             {
-                var response = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
+                var response = await Communication.GetAllPanelInfo(IP, Port, Auth_token!);
                 if (response.Success)
                 {
                     backupSettings(response.ResponseValue);
                     updateInfos(response.ResponseValue);
                 }
 
-                var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
+                var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token!, DeviceType);
                 if (eci.Success)
                 {
                     externalControlInfo = eci.ResponseValue;
@@ -446,7 +446,7 @@ namespace NanoleafAPI
         {
             if (IsSendPossible)
             {
-                var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token, DeviceType);
+                var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token!, DeviceType);
                 if (eci.Success)
                 {
                     externalControlInfo = eci.ResponseValue;
@@ -705,33 +705,33 @@ namespace NanoleafAPI
 
             try
             {
-                await Communication.SetPanelLayoutGlobalOrientation(IP, Port, Auth_token, GlobalOrientationStored);
-                await Communication.SetStateBrightness(IP, Port, Auth_token, BrightnessStored);
+                await Communication.SetPanelLayoutGlobalOrientation(IP, Port, Auth_token!, GlobalOrientationStored);
+                await Communication.SetStateBrightness(IP, Port, Auth_token!, BrightnessStored);
 
                 //Check, if the last state is restorable
                 if (SelectedEffectStored != null && !SelectedEffectStored.Equals("*Dynamic*"))
                 {
-                    await Communication.SetSelectedEffect(IP, Port, Auth_token, SelectedEffectStored);
+                    await Communication.SetSelectedEffect(IP, Port, Auth_token!, SelectedEffectStored);
 
                     if (ColorModeStored != null && ColorModeStored.Equals("ct"))
                     {
-                        await Communication.SetStateColorTemperature(IP, Port, Auth_token, ColorTempratureStored);
+                        await Communication.SetStateColorTemperature(IP, Port, Auth_token!, ColorTempratureStored);
                     }
                     if (ColorModeStored != null && ColorModeStored.Equals("hs"))
                     {
-                        await Communication.SetStateHue(IP, Port, Auth_token, HueStored);
-                        await Communication.SetStateSaturation(IP, Port, Auth_token, SaturationStored);
+                        await Communication.SetStateHue(IP, Port, Auth_token!, HueStored);
+                        await Communication.SetStateSaturation(IP, Port, Auth_token!, SaturationStored);
                     }
                 }
                 else
                 {
                     // If the selected effect was "Dynamic" then a preview scene was active which can not be restored. Thus, set a default scene
-                    await Communication.SetStateColorTemperature(IP, Port, Auth_token, 5000);
+                    await Communication.SetStateColorTemperature(IP, Port, Auth_token!, 5000);
                 }
 
                 await Task.Delay(2000);
                 // Setting the power state must be the last thing to do due to the fact that all other commands activate the Nanoleafs
-                await Communication.SetStateOnOff(IP, Port, Auth_token, PowerOnStored);
+                await Communication.SetStateOnOff(IP, Port, Auth_token!, PowerOnStored);
             }
             finally
             {
