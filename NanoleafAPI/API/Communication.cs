@@ -95,7 +95,7 @@ namespace NanoleafAPI
                 String strHostName = Dns.GetHostName();
 
                 // Find host by name
-                IPHostEntry iphostentry = Dns.GetHostByName(strHostName);
+                IPHostEntry iphostentry = Dns.GetHostEntry(strHostName);
 
                 // Enumerate IP addresses
                 foreach (IPAddress ipaddress in iphostentry.AddressList)
@@ -133,11 +133,11 @@ namespace NanoleafAPI
                                        _logger?.LogDebug($"Device Discovered via SSDP: {device}");
                                        DeviceDiscovered?.InvokeFailSafe(null, new DiscoveredEventArgs(device));
                                    }
-                               }
+                               } 
                            }
                            catch (Exception ex)
                            {
-                               _logger?.LogWarning("Not able to decode the SSDP Notification", ex);
+                               _logger?.LogWarning(ex, "Not able to decode the SSDP Notification");
                            }
                        }
                        );
@@ -145,7 +145,7 @@ namespace NanoleafAPI
             }
             catch(Exception e)
             {
-                _logger?.LogWarning("Not able use SSDP-Library", e);
+                _logger?.LogWarning(e, "Not able use SSDP-Library");
             }
         }
         public static void StopDiscoverySSDPTask()
@@ -192,7 +192,7 @@ namespace NanoleafAPI
 
                                 if (string.IsNullOrWhiteSpace(ip) || string.IsNullOrWhiteSpace(port) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id))
                                 {
-                                    _logger?.LogDebug($"Device Discovered via mDNS but can't be parsed correctly", service);
+                                    _logger?.LogDebug($"Device Discovered via mDNS but can't be parsed correctly. Service: {service}");
                                     return;
                                 }
                                 else
@@ -206,7 +206,7 @@ namespace NanoleafAPI
                             }
                             catch (Exception ex)
                             {
-                                _logger?.LogWarning("Not able to decode the mDNS Datagram", ex);
+                                _logger?.LogWarning(ex, "Not able to decode the mDNS Datagram");
                             }
                         }
                         await Task.Delay(500);
@@ -216,7 +216,7 @@ namespace NanoleafAPI
             }
             catch (Exception e)
             {
-                _logger?.LogWarning("Not able use mDNS-Library", e);
+                _logger?.LogWarning(e, "Not able use mDNS-Library");
             }
         }
         public static void StopDiscoverymDNSTask()
