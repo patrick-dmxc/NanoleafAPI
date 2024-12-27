@@ -2,29 +2,8 @@
 
 namespace NanoleafAPI
 {
-    public readonly struct PanelPosition
+    public readonly partial struct PanelPosition
     {
-        public enum EShapeType
-        {
-            Triangle = 0,
-            Rhythm = 1,
-            Square = 2,
-            ControlSquarePrimary = 3,
-            ContolSquarePassive = 4,
-            PowerSupply = 5,
-            Hexagon_Shapes = 7,
-            Triangle_Shapes = 8,
-            MiniTriangle_Shapes = 9,
-            ShapesController = 12,
-            ElementsHexagons = 14,
-            ElementsHexagonsCorner = 15,
-            LinesConnector = 16,
-            LightLines = 17,
-            LightLinesSingleZone = 18,
-            ControllerCap = 19,
-            PowerConnector = 20
-        }
-
         [JsonPropertyName("panelId")]
         public readonly int PanelId { get; }
 
@@ -38,10 +17,10 @@ namespace NanoleafAPI
         public readonly float Orientation { get; }
 
         [JsonPropertyName("shapeType")]
-        public readonly EShapeType ShapeType { get; }
+        public readonly EPanelType ShapeType { get; }
 
         [JsonConstructor]
-        public PanelPosition(int panelId, float x, float y, float orientation, EShapeType shapeType) => (PanelId, X, Y, Orientation, ShapeType) = (panelId, x, y, orientation, shapeType);
+        public PanelPosition(int panelId, float x, float y, float orientation, EPanelType shapeType) => (PanelId, X, Y, Orientation, ShapeType) = (panelId, x, y, orientation, shapeType);
 
         public override string ToString()
         {
@@ -54,30 +33,30 @@ namespace NanoleafAPI
             {
                 switch (this.ShapeType)
                 {
-                    case EShapeType.Triangle:
+                    case EPanelType.Triangle:
                         return 150;
-                    case EShapeType.Rhythm:
+                    case EPanelType.Rhythm:
                         return 0;
-                    case EShapeType.Square:
-                    case EShapeType.ContolSquarePassive:
-                    case EShapeType.ControlSquarePrimary:
+                    case EPanelType.Square:
+                    case EPanelType.ContolSquarePassive:
+                    case EPanelType.ControlSquarePrimary:
                         return 100;
-                    case EShapeType.Hexagon_Shapes:
-                    case EShapeType.ShapesController:
-                    case EShapeType.MiniTriangle_Shapes:
+                    case EPanelType.Hexagon_Shapes:
+                    case EPanelType.ShapesController:
+                    case EPanelType.MiniTriangle_Shapes:
                         return 67;
-                    case EShapeType.Triangle_Shapes:
-                    case EShapeType.ElementsHexagons:
+                    case EPanelType.Triangle_Shapes:
+                    case EPanelType.ElementsHexagons:
                         return 134;
-                    case EShapeType.ElementsHexagonsCorner:
+                    case EPanelType.ElementsHexagonsCorner:
                         return 33.5; //58
-                    case EShapeType.LightLines:
+                    case EPanelType.LightLines:
                         return 154;
-                    case EShapeType.LightLinesSingleZone:
+                    case EPanelType.LightLinesSingleZone:
                         return 77;
-                    case EShapeType.LinesConnector:
-                    case EShapeType.ControllerCap:
-                    case EShapeType.PowerConnector:
+                    case EPanelType.LinesConnector:
+                    case EPanelType.ControllerCap:
+                    case EPanelType.PowerConnector:
                         return 11;
                 }
                 return 0;

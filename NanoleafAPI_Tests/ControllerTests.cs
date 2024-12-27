@@ -32,17 +32,17 @@ namespace NanoleafAPI_Tests
             await c.StartStreaming();
             Assert.That(c.StreamingStarted, Is.True, "Stream");
             await Task.Delay(1000);
-            foreach (var panel in c.Panels)
+            foreach (var panel in c.SubDevices)
                 panel.StreamingColor= new RGBW(255,0,255);
             await Task.Delay(1000);
             Assert.That(c.StreamingStarted, Is.True, "Stream");
-            foreach (var panel in c.Panels)
+            foreach (var panel in c.SubDevices)
                 panel.StreamingColor = new RGBW(0, 0, 255);
             await Task.Delay(1000);
-            foreach (var panel in c.Panels)
+            foreach (var panel in c.SubDevices)
                 panel.StreamingColor = new RGBW(255, 0, 0);
             await Task.Delay(1000);
-            foreach (var panel in c.Panels)
+            foreach (var panel in c.SubDevices)
                 panel.StreamingColor = new RGBW(0, 255, 0);
         }
         [Test]
@@ -83,7 +83,7 @@ namespace NanoleafAPI_Tests
             await c.StartStreaming();
             Assert.That(c.StreamingStarted, Is.True, "Stream");
 
-            foreach (var panel in c.Panels)
+            foreach (var panel in c.SubDevices)
                 panel.StreamingColor = new RGBW(255, 0, 255);
         }
     }

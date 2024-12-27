@@ -9,9 +9,10 @@ namespace NanoleafTest
     class Program
     {
         static ILogger _logger;
-        const string ip = "192.168.10.152";
         const string port = "16021";
-        const string AUTH_TOKEN = "7lOFIqsyqmO8c8H2bYco74z4fK2DmXqK";
+        const string ip_static = "";
+        const string AUTH_TOKEN_static = "";
+
         static Controller controller = null;
         static void Main(string[] args)
         {
@@ -31,16 +32,39 @@ namespace NanoleafTest
             Communication.StaticOnGestureEvent += Communication_StaticOnGestureEvent;
             Communication.StaticOnEffectEvent += Communication_StaticOnEffectEvent;
             Communication.StaticOnStateEvent += Communication_StaticOnStateEvent;
+
+            string ip;
+            string AUTH_TOKEN;
+            if (!String.IsNullOrEmpty(ip_static))
+                ip = ip_static;
+            else
+            {
+                Console.WriteLine("Please enter IP address of controller: ");
+                ip = Console.ReadLine();
+            }
+
+            if (!String.IsNullOrEmpty(AUTH_TOKEN_static))
+                AUTH_TOKEN = AUTH_TOKEN_static;
+            else
+            {
+                Console.WriteLine("Please enter AUTH_TOKEN of controller: ");
+                AUTH_TOKEN = Console.ReadLine();
+            }
+
             controller = new Controller(ip, port, AUTH_TOKEN);
             bool alive = true;
             Thread taskStream = new Thread(() =>
             {
                 byte val = 0;
+                byte colorVal;
                 while (alive)
                 {
-                    var rgbw = new RGBW(val, 0, 0, 0);
-                    foreach (var p in controller.Panels.ToArray())
-                        _ = controller.SetPanelColor(p.ID, rgbw);
+                    foreach (var p in controller.SubDevices.Select((value, index)=> new { value, index }))
+                    {
+                        colorVal = (byte)(val + p.index);
+                        var rgbw = new RGBW(colorVal, colorVal, 0, 0);
+                        _ = controller.SetSubDeviceColor(p.value.ID, rgbw);
+                    }
                     Thread.Sleep(10);
                     val++;
                 }
@@ -49,6 +73,9 @@ namespace NanoleafTest
             taskStream.Priority = ThreadPriority.Highest;
             taskStream.Start();
 
+            Thread.Sleep(2000);
+
+            controller.StartStreaming();
 
             Console.ReadLine();
             _ = controller.SelfDestruction(true);

@@ -2,7 +2,7 @@
 
 namespace NanoleafAPI
 {
-    public readonly struct AllPanelInfo
+    public readonly struct AllPanelInfo : IDeviceInfo
     {
         [JsonPropertyName("name")]
         public readonly string Name { get; }

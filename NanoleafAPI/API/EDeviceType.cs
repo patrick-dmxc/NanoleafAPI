@@ -16,5 +16,6 @@
         //NL52 Elements Hexagons
         Lines = 5, //NL59
         Essentials = 6, //NL45
+        StringLights = 7, //NL71K1 and NL71K2
     }
 }

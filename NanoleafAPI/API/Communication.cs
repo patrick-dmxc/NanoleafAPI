@@ -271,7 +271,7 @@ namespace NanoleafAPI
 
 
                 HttpResponseMessage? response = null;
-                for (byte i = 0; i < 10; i++)
+                for (byte i = 0; i < 3; i++)
                 {
                     try
                     {
@@ -291,14 +291,14 @@ namespace NanoleafAPI
                     catch (HttpRequestException)
                     {
                         client?.Dispose();
-                        await Task.Delay(300);
+                        await Task.Delay(500);
                         client = createClient();
                     }
-                    await Task.Delay(300);
+                    await Task.Delay(500);
                 }
                 if (response == null)
                 {
-                    _logger?.LogWarning($"Request for {caller} run in timeout for 10 times");
+                    _logger?.LogWarning($"Request for {caller} run in timeout for 3 times");
                     return new Result<T>(request);
                 }
                 if (request.ExpectedResponseStatusCode.Contains(response.StatusCode))
@@ -353,9 +353,9 @@ namespace NanoleafAPI
             return new Result<T>(request);
         }
 
-        public static async Task<Result<object>> Ping(string ip, string port)
+        public static async Task<Result<object>> Ping(string ip, string port, string? auth_token)
         {
-            var res = await SendRequest<object>(new Request(ip, port, null, string.Empty, null, HttpMethod.Post, HttpStatusCode.Unauthorized, HttpStatusCode.NoContent));
+            var res = await SendRequest<object>(new Request(ip, port, String.IsNullOrEmpty(auth_token) ? "" : auth_token, string.Empty, null, HttpMethod.Get, HttpStatusCode.OK, HttpStatusCode.Unauthorized, HttpStatusCode.NoContent));
             return res;
         }
 
@@ -371,6 +371,13 @@ namespace NanoleafAPI
             return res;
         }
         #endregion
+        #region Essentials Info
+        public static async Task<Result<EssentialsInfo>> GetEssentialsInfo(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<EssentialsInfo>(new Request(ip, port, auth_token, string.Empty, null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+        #endregion
         #region All Panel Info
         public static async Task<Result<AllPanelInfo>> GetAllPanelInfo(string ip, string port, string auth_token)
         {
@@ -379,6 +386,12 @@ namespace NanoleafAPI
         }
         #endregion
         #region State
+        public static async Task<Result<States>> GetStates(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<States>(new Request(ip, port, auth_token, "state", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+
         #region On/Off
         public static async Task<Result<StateOnOff>> GetStateOnOff(string ip, string port, string auth_token)
         {
@@ -482,6 +495,11 @@ namespace NanoleafAPI
         public static async Task<Result<IReadOnlyList<string>>> GetEffectList(string ip, string port, string auth_token)
         {
             var res = await SendRequest<IReadOnlyList<string>>(new Request(ip, port, auth_token, "effects/effectsList", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+        public static async Task<Result<object>> GetAllEffects(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<object>(new Request(ip, port, auth_token, "effects", new Command(new { write = new { command = "requestAll" } }), HttpMethod.Put, HttpStatusCode.OK));
             return res;
         }
 
@@ -590,6 +608,13 @@ namespace NanoleafAPI
             return res;
         }
         #endregion
+        #region Length
+        public static async Task<Result<Length>> GetStripLength(string ip, string port, string auth_token)
+        {
+            var res = await SendRequest<Length>(new Request(ip, port, auth_token, "length", null, HttpMethod.Get, HttpStatusCode.OK));
+            return res;
+        }
+        #endregion
         #region Identify
 
         public static async Task<Result<object>> Identify(string ip, string port, string auth_token)
@@ -683,30 +708,30 @@ namespace NanoleafAPI
             }
             return res;
         }
-        public static byte[]? CreateStreamingData(IEnumerable<Panel> panels)
+        public static byte[]? CreateStreamingData(IEnumerable<SubDevice> subDevices)
         {
             try
             {
                 using (MemoryStream ms = new MemoryStream())
                 {
-                    var panelCount = BitConverter.GetBytes(panels.Count()).Take(2);
+                    var subDevicesCount = BitConverter.GetBytes(subDevices.Count()).Take(2);
                     if (BitConverter.IsLittleEndian)
-                        panelCount = panelCount.Reverse();
-                    ms.WriteByte(panelCount.ElementAt(0));
-                    ms.WriteByte(panelCount.ElementAt(1));
+                        subDevicesCount = subDevicesCount.Reverse();
+                    ms.WriteByte(subDevicesCount.ElementAt(0));
+                    ms.WriteByte(subDevicesCount.ElementAt(1));
 
-                    foreach (var panel in panels)
+                    foreach (var subDevice in subDevices)
                     {
-                        var panelIdBytes = BitConverter.GetBytes(panel.ID).Take(2);
+                        var subDeviceIdBytes = BitConverter.GetBytes(subDevice.ID).Take(2);
                         if (BitConverter.IsLittleEndian)
-                            panelIdBytes = panelIdBytes.Reverse();
+                            subDeviceIdBytes = subDeviceIdBytes.Reverse();
 
-                        ms.WriteByte(panelIdBytes.ElementAt(0));
-                        ms.WriteByte(panelIdBytes.ElementAt(1));
-                        ms.WriteByte(Convert.ToByte(panel.StreamingColor.R));
-                        ms.WriteByte(Convert.ToByte(panel.StreamingColor.G));
-                        ms.WriteByte(Convert.ToByte(panel.StreamingColor.B));
-                        ms.WriteByte(Convert.ToByte(panel.StreamingColor.W));
+                        ms.WriteByte(subDeviceIdBytes.ElementAt(0));
+                        ms.WriteByte(subDeviceIdBytes.ElementAt(1));
+                        ms.WriteByte(Convert.ToByte(subDevice.StreamingColor.R));
+                        ms.WriteByte(Convert.ToByte(subDevice.StreamingColor.G));
+                        ms.WriteByte(Convert.ToByte(subDevice.StreamingColor.B));
+                        ms.WriteByte(Convert.ToByte(subDevice.StreamingColor.W));
                         ms.WriteByte(0);
                         ms.WriteByte(0);
                     }

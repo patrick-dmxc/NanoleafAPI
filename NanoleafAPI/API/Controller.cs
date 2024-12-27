@@ -43,8 +43,8 @@ namespace NanoleafAPI
 
         public EDeviceType DeviceType { get; private set; }
 
+        public uint NumberOfSubDevices { get; private set; }
 
-        public uint NumberOfPanels { get; private set; }
         private float globalOrientation;
         public float GlobalOrientation
         {
@@ -222,16 +222,16 @@ namespace NanoleafAPI
         public string ColorMode { get; private set; }
         [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         public string ColorModeStored { get; private set; }
-        private List<Panel> panels = new List<Panel>();
-        private ConcurrentDictionary<int, Panel> changedPanels = new ConcurrentDictionary<int, Panel>();
-        public IReadOnlyList<Panel> Panels
+        private List<SubDevice> subdevices = new List<SubDevice>();
+        private ConcurrentDictionary<int, SubDevice> changedSubDevices = new ConcurrentDictionary<int, SubDevice>();
+        public IReadOnlyList<SubDevice> SubDevices
         {
-            get { return panels.AsReadOnly(); }
+            get { return subdevices.AsReadOnly(); }
         }
 
-        public event EventHandler PanelAdded;
-        public event EventHandler PanelRemoved;
-        public event EventHandler PanelLayoutChanged;
+        public event EventHandler SubDeviceAdded;
+        public event EventHandler SubDeviceRemoved;
+        public event EventHandler SubDeviceLayoutChanged;
         public event EventHandler AuthTokenReceived;
         public event EventHandler UpdatedInfos;
 
@@ -275,11 +275,11 @@ namespace NanoleafAPI
             return new Controller(ip, port, false, null);
         }
 
-
         ~Controller()
         {
             Dispose();
         }
+
         public async Task Initialize()
         {
             if (this.IsInitialized)
@@ -289,6 +289,7 @@ namespace NanoleafAPI
             this.IsInitialized = true;
             this.IsInitializing = false;
         }
+
         private async Task startServices()
         {
             if (!Tools.IsTokenValid(Auth_token))
@@ -356,29 +357,52 @@ namespace NanoleafAPI
             {
                 try
                 {
-                    var responsePing= await Communication.Ping(IP, Port);
-                    this.Reachable = responsePing.Success;
+                    var responsePing = await Communication.Ping(IP, Port, Auth_token);
+                    this.Reachable = responsePing.StatusCode == System.Net.HttpStatusCode.OK;
 
                     await Task.Delay(5000);
 
                     if (this.Reachable && !isDisposed && Tools.IsTokenValid(Auth_token))
                     {
-                        var response = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
-                        if (response.Success)
-                            updateInfos(response.ResponseValue);
-                        else
+                        if (DeviceType.HasFlag(EDeviceType.StringLights))
                         {
-                            _logger?.LogDebug($"{nameof(Communication.GetAllPanelInfo)} returned null!");
-                            _logger?.LogDebug($"Checking Connection to {IP}");
+                            var response = await Communication.GetEssentialsInfo(IP, Port, Auth_token);
+                           
+                            await Task.Delay(100);
+                            var stateResponse = await Communication.GetStates(IP, Port, Auth_token);
+                            
+                            await Task.Delay(100);
+                            var effectResponse = await Communication.GetEffectList(IP, Port, Auth_token);
 
-                            responsePing = await Communication.Ping(IP, Port);
-                            this.Reachable = responsePing.Success;
-                            if (this.Reachable)
+                            //Currently commented out because the selected effect responds with a non-JSON conform string
+                            //await Task.Delay(100);
+                            //var selectedEffectResponse = await Communication.GetSelectedEffect(IP, Port, Auth_token);
+
+                            if (response.Success && stateResponse.Success && effectResponse.Success)
                             {
-                                _logger?.LogDebug($"Reset Auth_Token for {IP}");
-                                Auth_token = null;
-                                await RequestToken();
-                                _logger?.LogDebug($"New Auth_Token for {IP} is {Auth_token}");
+                                updateDeviceInfo(response.ResponseValue);
+                                updateEssentialsInfo(stateResponse.ResponseValue, null, effectResponse.ResponseValue);
+                            }
+                        }
+                        else if (DeviceType != EDeviceType.UNKNOWN)
+                        {
+                            var response = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
+                            if (response.Success)
+                                updatePanelInfos(response.ResponseValue);
+                            else
+                            {
+                                _logger?.LogDebug($"{nameof(Communication.GetAllPanelInfo)} returned null!");
+                                _logger?.LogDebug($"Checking Connection to {IP}");
+
+                                responsePing = await Communication.Ping(IP, Port, Auth_token);
+                                this.Reachable = responsePing.Success;
+                                if (this.Reachable)
+                                {
+                                    _logger?.LogDebug($"Reset Auth_Token for {IP}");
+                                    Auth_token = null;
+                                    await RequestToken();
+                                    _logger?.LogDebug($"New Auth_Token for {IP} is {Auth_token}");
+                                }
                             }
                         }
                     }
@@ -389,6 +413,7 @@ namespace NanoleafAPI
                 }
             } while (!isDisposed);
         }
+
         private async Task establishConnection()
         {
             try
@@ -399,29 +424,90 @@ namespace NanoleafAPI
                 Communication.StaticOnLayoutEvent -= Communication_StaticOnLayoutEvent;
                 Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
 
-                var reponse = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
-                if (!reponse.Success)
-                    return;
+                var esentialsReponse = await Communication.GetEssentialsInfo(IP, Port, Auth_token);
+                updateDeviceInfo(esentialsReponse.ResponseValue);
 
-                backupSettings(reponse.ResponseValue);
-                updateInfos(reponse.ResponseValue);
-                Communication.StartEventListener(IP, Port, Auth_token);
+                if (DeviceType == EDeviceType.StringLights)
+                {
+                    var stateResponse = await Communication.GetStates(IP, Port, Auth_token);
+                    if (!stateResponse.Success)
+                        return;
+
+                    await Task.Delay(100);
+                    var lengthResponse = await Communication.GetStripLength(IP, Port, Auth_token);
+                    if (!lengthResponse.Success)
+                        return;
+
+                    await Task.Delay(100);
+                    var effectResponse = await Communication.GetEffectList(IP, Port, Auth_token);
+                    if (!stateResponse.Success)
+                        return;
+
+                    //Currently commented out because the selected effect responds with a non-JSON conform string
+                    //var selectedEffectResponse = await Communication.GetSelectedEffect(IP, Port, Auth_token);
+                    //if (!selectedEffectResponse.Success)
+                    //    return;
+
+                    //backupSettings(stateResponse.ResponseValue, effectResponse.ResponseValue, selectedEffectResponse.ResponseValue);
+                    //updateEssentialsInfo(stateResponse.ResponseValue, lengthResponse.ResponseValue, effectResponse.ResponseValue, selectedEffectResponse.ResponseValue);
+
+                    backupSettings(stateResponse.ResponseValue, effectResponse.ResponseValue);
+                    updateEssentialsInfo(stateResponse.ResponseValue, lengthResponse.ResponseValue, effectResponse.ResponseValue);
+                }
+                else if (DeviceType != EDeviceType.UNKNOWN)
+                {
+                    var reponse = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
+                    if (!reponse.Success)
+                        return;
+
+                    backupSettings(reponse.ResponseValue);
+                    updatePanelInfos(reponse.ResponseValue);
+                    Communication.StartEventListener(IP, Port, Auth_token);
+                }
             }
             catch (Exception e)
             {
                 _logger?.LogError(e, string.Empty);
             }
         }
+
         public async Task StartStreaming()
         {
             _logger?.LogInformation($"Starting Stream to {IP}");
             if (IsSendPossible)
             {
-                var response = await Communication.GetAllPanelInfo(IP, Port, Auth_token!);
-                if (response.Success)
+                if (DeviceType == EDeviceType.StringLights)
                 {
-                    backupSettings(response.ResponseValue);
-                    updateInfos(response.ResponseValue);
+                    var stateResponse = await Communication.GetStates(IP, Port, Auth_token);
+                    if (!stateResponse.Success)
+                        return;
+
+                    var lengthResponse = await Communication.GetStripLength(IP, Port, Auth_token);
+                    if (!lengthResponse.Success)
+                        return;
+
+                    var effectResponse = await Communication.GetEffectList(IP, Port, Auth_token);
+                    if (!stateResponse.Success)
+                        return;
+
+                    //var selectedEffectResponse = await Communication.GetSelectedEffect(IP, Port, Auth_token);
+                    //if (!selectedEffectResponse.Success)
+                    //    return;
+
+                    //backupSettings(stateResponse.ResponseValue, lengthResponse.ResponseValue, effectResponse.ResponseValue, selectedEffectResponse.ResponseValue);
+                    //updateEssentialsInfo(stateResponse.ResponseValue, lengthResponse.ResponseValue, effectResponse.ResponseValue, selectedEffectResponse.ResponseValue);
+
+                    backupSettings(stateResponse.ResponseValue, effectResponse.ResponseValue);
+                    updateEssentialsInfo(stateResponse.ResponseValue, null, effectResponse.ResponseValue);
+                }
+                else
+                {
+                    var reponse = await Communication.GetAllPanelInfo(IP, Port, Auth_token);
+                    if (!reponse.Success)
+                        return;
+
+                    backupSettings(reponse.ResponseValue);
+                    updatePanelInfos(reponse.ResponseValue);
                 }
 
                 var eci = await Communication.SetExternalControlStreaming(IP, Port, Auth_token!, DeviceType);
@@ -442,6 +528,7 @@ namespace NanoleafAPI
 
             StreamingStarted = false;
         }
+
         public async Task RestartStreaming()
         {
             if (IsSendPossible)
@@ -458,6 +545,7 @@ namespace NanoleafAPI
             }
             StreamingStarted = false;
         }
+
         public async Task StopStreaming()
         {
             _logger?.LogInformation($"Stopping Stream to {IP}");
@@ -472,7 +560,30 @@ namespace NanoleafAPI
             StreamingStarted = false;
         }
 
-        private void updateInfos(AllPanelInfo? allPanelInfo)
+        private void updateDeviceInfo(EssentialsInfo? essentialsDeviceInfo)
+        {
+            if (!essentialsDeviceInfo.HasValue)
+            {
+                this.Reachable = false;
+                return;
+            }
+            this.Reachable = true;
+
+            EssentialsInfo edi = essentialsDeviceInfo.Value;
+
+            Name = edi.Name;
+            Model = edi.Model;
+            Manufacturer = edi.Manufacturer;
+            SerialNumber = edi.SerialNumber;
+            HardwareVersion = edi.HardwareVersion;
+            FirmwareVersion = edi.FirmwareVersion;
+
+            DeviceType = Tools.ModelStringToEnum(Model);
+
+            UpdatedInfos?.InvokeFailSafe(this, EventArgs.Empty);
+        }
+
+        private void updatePanelInfos(AllPanelInfo? allPanelInfo)
         {
             if (!allPanelInfo.HasValue)
             {
@@ -492,7 +603,7 @@ namespace NanoleafAPI
 
             DeviceType = Tools.ModelStringToEnum(Model);
 
-            NumberOfPanels = apl.PanelLayout.Layout.NumberOfPanels;
+            NumberOfSubDevices = apl.PanelLayout.Layout.NumberOfPanels;
             globalOrientation = apl.PanelLayout.GlobalOrientation.Value;
             GlobalOrientationMin = (float)apl.PanelLayout.GlobalOrientation.Min;
             GlobalOrientationMax = (float)apl.PanelLayout.GlobalOrientation.Max;
@@ -521,6 +632,49 @@ namespace NanoleafAPI
             UpdatePanelLayout(apl.PanelLayout.Layout);
         }
 
+        private void updateEssentialsInfo(States? state, Length? length, IReadOnlyList<string>? effectsList) //, string? selectedEffect)
+        {
+            if (state == null || effectsList == null ) //|| selectedEffect == null)
+            {
+                this.Reachable = false;
+                return;
+            }
+            this.Reachable = true;
+
+            States stateValue = state.Value;
+
+            globalOrientation = 0;
+            GlobalOrientationMin = 0;
+            GlobalOrientationMax = 0;
+
+            EffectList = effectsList.ToArray();
+            //SelectedEffect = selectedEffect;
+            PowerOn = stateValue.On.On;
+            PowerOff = !PowerOn;
+
+            brightness = stateValue.Brightness.Value;
+            BrightnessMin = (float)stateValue.Brightness.Min;
+            BrightnessMax = (float)stateValue.Brightness.Max;
+            hue = stateValue.Hue.Value;
+            HueMin = (float)stateValue.Hue.Min;
+            HueMax = (float)stateValue.Hue.Max;
+            saturation = stateValue.Saturation.Value;
+            SaturationMin = (float)stateValue.Saturation.Min;
+            SaturationMax = (float)stateValue.Saturation.Max;
+            colorTemprature = stateValue.ColorTemprature.Value;
+            ColorTempratureMin = (float)stateValue.ColorTemprature.Min;
+            ColorTempratureMax = (float)stateValue.ColorTemprature.Max;
+            ColorMode = stateValue.ColorMode;
+
+            UpdatedInfos?.InvokeFailSafe(this, EventArgs.Empty);
+
+            if (length != null)
+            {
+                NumberOfSubDevices = length.Value.NumLEDs;
+                UpdateSubDevices(length.Value);
+            }
+        }
+
         private void backupSettings(AllPanelInfo allPanelInfo)
         {
             //Backup current state to restore it on shutdown
@@ -534,6 +688,18 @@ namespace NanoleafAPI
             ColorModeStored = allPanelInfo.State.ColorMode;
         }
 
+        private void backupSettings(States statesInfo, IReadOnlyList<string>? effectsListInfo) //, string? selectedEffectInfo)
+        {
+            //Backup current state to restore it on shutdown
+            //SelectedEffectStored = String.IsNullOrEmpty(selectedEffectInfo) ? string.Empty : selectedEffectInfo;
+            PowerOnStored = statesInfo.On.On;
+            BrightnessStored = statesInfo.Brightness.Value;
+            HueStored = statesInfo.Hue.Value;
+            SaturationStored = statesInfo.Saturation.Value;
+            ColorTempratureStored = statesInfo.ColorTemprature.Value;
+            ColorModeStored = statesInfo.ColorMode;
+        }
+
         private void Communication_StaticOnLayoutEvent(object? sender, LayoutEventArgs e)
         {
             if (!e.IP.Equals(IP))
@@ -543,20 +709,21 @@ namespace NanoleafAPI
                 if (!isDisposed && @event.Layout.HasValue)
                     UpdatePanelLayout(@event.Layout.Value);
         }
+
         private void UpdatePanelLayout(Layout layout)
         {
             var ids = layout.PanelPositions.Select(p => p.PanelId);
             foreach (int id in ids)
             {
-                if (!panels.Any(p => p.ID.Equals(id)))
+                if (!subdevices.Any(p => p.ID.Equals(id)))
                 {
                     var pp = layout.PanelPositions.Single(p => p.PanelId.Equals(id));
-                    panels.Add(new Panel(IP, pp));
-                    PanelAdded?.InvokeFailSafe(null, EventArgs.Empty);
+                    subdevices.Add(new Panel(IP, pp));
+                    SubDeviceAdded?.InvokeFailSafe(null, EventArgs.Empty);
                 }
             }
             bool panelRemoved = false;
-            panels.RemoveAll((p) =>
+            subdevices.RemoveAll((p) =>
             {
                 bool remove = !ids.Any(id => id.Equals(p.ID));
                 if (remove)
@@ -564,9 +731,33 @@ namespace NanoleafAPI
                 return remove;
             });
             if (panelRemoved)
-                PanelRemoved?.InvokeFailSafe(null, EventArgs.Empty);
+                SubDeviceRemoved?.InvokeFailSafe(null, EventArgs.Empty);
 
-            PanelLayoutChanged?.InvokeFailSafe(null, EventArgs.Empty);
+            SubDeviceLayoutChanged?.InvokeFailSafe(null, EventArgs.Empty);
+        }
+
+        private void UpdateSubDevices(Length length)
+        {
+            //generates ord removes SubDevices based on the Length of the LED-Strip
+            for (int i = 0; i < length.NumLEDs; i++)
+            {
+                if (!subdevices.Any(p => p.ID.Equals(i)))
+                {
+                    subdevices.Add(new SubDevice(IP, i));
+                    SubDeviceAdded?.InvokeFailSafe(null, EventArgs.Empty);
+                }
+            }
+
+            foreach (var subdevice in subdevices.Select(p => p).ToList())
+            {
+                if (subdevice.ID >= length.NumLEDs)
+                {
+                    subdevices.Remove(subdevice);
+                    SubDeviceRemoved?.InvokeFailSafe(null, EventArgs.Empty);
+                }
+            }
+
+            SubDeviceLayoutChanged?.InvokeFailSafe(null, EventArgs.Empty);
         }
 
         private void streamController()
@@ -606,9 +797,9 @@ namespace NanoleafAPI
 #if DEBUG
                                 _logger?.LogDebug("Key-Frame");
 #endif
-                                if (panels.Count != 0)
+                                if (subdevices.Count != 0)
                                 {
-                                    var data = Communication.CreateStreamingData(panels);
+                                    var data = Communication.CreateStreamingData(subdevices);
                                     if (data != null && externalControlInfo.HasValue)
                                         await Communication.SendUDPCommand(externalControlInfo.Value, data);
                                     else
@@ -620,10 +811,10 @@ namespace NanoleafAPI
 #if DEBUG
                                 _logger?.LogDebug("Delta-Frame");
 #endif
-                                var _panels = panels.Where(p => frameTime < p.LastUpdate);
-                                if (_panels.Count() > 0)
+                                var _subDevices = subdevices.Where(p => frameTime < p.LastUpdate);
+                                if (_subDevices.Count() > 0)
                                 {
-                                    var data = Communication.CreateStreamingData(_panels);
+                                    var data = Communication.CreateStreamingData(_subDevices);
                                     if (data != null && externalControlInfo.HasValue)
                                         await Communication.SendUDPCommand(externalControlInfo.Value, data);
                                     else
@@ -670,14 +861,14 @@ namespace NanoleafAPI
             }
         }
 
-        public bool SetPanelColor(int panelID, RGBW color)
+        public bool SetSubDeviceColor(int subDeviceID, RGBW color)
         {
             try
             {
-                var panel = this.panels.FirstOrDefault(p => p.ID.Equals(panelID));
-                if (panel != null)
+                var subDevice = this.subdevices.FirstOrDefault(p => p.ID.Equals(subDeviceID));
+                if (subDevice != null)
                 {
-                    panel.StreamingColor = color;
+                    subDevice.StreamingColor = color;
                     return true;
                 }
             }

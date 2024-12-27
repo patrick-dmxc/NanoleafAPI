@@ -31,6 +31,10 @@ namespace NanoleafAPI
                 case "nl59":
                     type = EDeviceType.Lines;
                     break;
+                case "nl71k1":
+                case "nl71k2":
+                    type = EDeviceType.StringLights;
+                    break;
             }
             return type;
         }

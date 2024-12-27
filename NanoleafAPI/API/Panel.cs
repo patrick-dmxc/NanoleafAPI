@@ -1,12 +1,11 @@
 ﻿using System.Text.Json.Serialization;
-using static NanoleafAPI.PanelPosition;
 
 namespace NanoleafAPI
 {
-    public class Panel
+    public class Panel : SubDevice
     {
-        public string IP { get; private set; }
-        public int ID { get; private set; }
+        public EPanelType PanelType { get; protected set; }
+
         private float x;
         public float X
         {
@@ -46,27 +45,6 @@ namespace NanoleafAPI
                 OrientationChanged?.InvokeFailSafe(this, EventArgs.Empty);
             }
         }
-        public EShapeType Shape { get; private set; }
-
-        private RGBW streamingColor;
-        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
-        public RGBW StreamingColor
-        {
-            get { return streamingColor; }
-            set
-            {
-                if (streamingColor == value)
-                    return;
-
-                streamingColor = value;
-                LastUpdate = DateTime.UtcNow.TimeOfDay.TotalMilliseconds;
-            }
-        }
-        public double LastUpdate
-        {
-            get;
-            private set;
-        }
 
         public double SideLength { get; internal set; }
 
@@ -75,26 +53,22 @@ namespace NanoleafAPI
         public event EventHandler OrientationChanged;
 
 #pragma warning disable CS8618
-        public Panel(string ip, PanelPosition pp)
+        public Panel(string ip, PanelPosition pp) : base(ip, pp.PanelId)
         {
-            IP = ip;
-            ID = pp.PanelId;
+            PanelType = pp.ShapeType;
             X = pp.X;
             Y = pp.Y;
             Orientation = pp.Orientation;
-            Shape = pp.ShapeType;
             SideLength = pp.SideLength;
             Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
         }
         [JsonConstructor]
-        public Panel(string ip, int id,float x, float y, float orientation, EShapeType shape, double sideLength)
+        public Panel(string ip, int id,float x, float y, float orientation, EPanelType panelType, double sideLength) : base(ip, id)
         {
-            IP = ip;
-            ID = id;
+            PanelType = panelType;
             X = x;
             Y = y;
             Orientation = orientation;
-            Shape = shape;
             SideLength = sideLength;
             Communication.StaticOnLayoutEvent += Communication_StaticOnLayoutEvent;
         }

@@ -29,7 +29,7 @@ namespace NanoleafAPI_Tests
             for (int i = 0; i < 10; i++)
             {
                 sw.Restart();
-                var response = await Communication.Ping(IP, PORT);
+                var response = await Communication.Ping(IP, PORT, AUTH_TOKEN);
                 sw.Stop();
                 Assert.That(response.Success, Is.True);
                 __logger?.LogDebug($"Ping took: {sw.ElapsedMilliseconds}ms");
@@ -43,7 +43,7 @@ namespace NanoleafAPI_Tests
             for (int i = 0; i < 1000; i++)
             {
                 sw.Restart();
-                var response = await Communication.Ping(IP, PORT);
+                var response = await Communication.Ping(IP, PORT, AUTH_TOKEN);
                 sw.Stop();
                 if (!response.Success)
                     countErrors++;
@@ -147,7 +147,7 @@ namespace NanoleafAPI_Tests
             do
             {
                 rgbw = new RGBW(255, val, val, 0);
-                var controlPanel = panels.Where(p => p.Shape == PanelPosition.EShapeType.ControlSquarePrimary).ToList();
+                var controlPanel = panels.Where(p => p.PanelType == PanelPosition.ESubDeviceType.ControlSquarePrimary).ToList();
                 controlPanel.ForEach(p => p.StreamingColor = rgbw);
                 var data2 = Communication.CreateStreamingData(controlPanel);
                 Assert.That(data2, Is.Not.Null);
